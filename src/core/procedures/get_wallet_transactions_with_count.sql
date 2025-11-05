@@ -24,6 +24,7 @@ begin
       uwt.status,
       uw.currency,
       uwt.source,
+      uw.currency,
       uwt.created_at
     from user_wallet_transaction as uwt
     inner join user_wallet as uw on uw.id = uwt.wallet_id

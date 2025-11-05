@@ -38,6 +38,7 @@ export default function WalletTransactionsTab() {
       const rows = res?.data || [];
       const mapped = rows.map((r) => ({
         id: r.id,
+        currency: r.currency,
         status: r.status,
         source: r.source,
         currency: r.currency,
