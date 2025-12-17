@@ -18,11 +18,13 @@ begin
   -- Insert tags
   for tag in select * from jsonb_array_elements(_tags)
   loop
-    insert into tag (name, icon, tag_group_id)
+    insert into tag (id, name, icon, tag_group_id, data)
     values (
-      tag->>'name',
-      tag->>'icon',
-      inserted_group.id
+   (tag->>'id')::uuid,          -- assuming id is UUID
+    tag->>'name',
+    tag->>'icon',
+    inserted_group.id,
+    tag->'data'   
     );
   end loop;
 

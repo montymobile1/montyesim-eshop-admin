@@ -85,7 +85,6 @@ function Settings() {
         tableHeaders={tableHeaders}
         actions={true}
         onEdit={() => navigate("/settings/edit")}
-        // onLogs={() => navigate("/settings/logs")}
       >
         {data?.map((el) => (
           <RowComponent key={el?.id} actions={true}>
@@ -122,7 +121,11 @@ function Settings() {
         }}
         rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
-          setSearchQueries({ ...searchQueries, pageSize: e.target.value });
+          setSearchQueries({
+            ...searchQueries,
+            page: 0,
+            pageSize: e.target.value,
+          });
         }}
       />
     </Card>

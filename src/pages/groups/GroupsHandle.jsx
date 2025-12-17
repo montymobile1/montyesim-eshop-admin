@@ -68,7 +68,7 @@ const schema = yup.object().shape({
                 return true;
               }
             ),
-          icon: yup.mixed().nullable(),
+          icon: yup.mixed().label("Icon").nullable().required(),
         })
       ),
     otherwise: (schema) =>
@@ -76,7 +76,7 @@ const schema = yup.object().shape({
         yup.object().shape({
           tag_id: yup.string().nullable(),
           name: yup.string().label("Name").max(30).nullable().required(),
-          icon: yup.mixed().nullable(),
+          icon: yup.mixed().label("Icon").nullable().required(),
         })
       ),
   }),
@@ -113,6 +113,7 @@ const GroupsHandle = () => {
     name: "tags",
   });
 
+  console.log(errors, "errorrss");
   useEffect(() => {
     if (id) {
       setIsLoading(true);
@@ -377,11 +378,15 @@ const GroupsHandle = () => {
                     <label htmlFor="icon-input">Icon</label>
                     <Controller
                       id="icon-input"
-                      render={({ field: { onChange, value } }) => (
+                      render={({
+                        field: { onChange, value },
+                        fieldState: { error },
+                      }) => (
                         <FormAvatarEditor
                           value={value}
                           name={getValues(`tags.${[index]}.name`)}
                           onChange={(value) => onChange(value)}
+                          helperText={error?.message}
                         />
                       )}
                       name={`tags.${[index]}.icon`}

@@ -104,17 +104,45 @@ export const addGroup = async (payload) => {
 
         return {
           ...el,
+          id: res?.data?.generatedUUID,
           icon: res?.data?.path
             ? `${
                 import.meta.env.VITE_SUPABASE_URL
               }/storage/v1/object/public/media/${res.data.path}`
             : null,
+          ...(groupPayload?.name?.toLowerCase() == "regions" && {
+            data: {
+              guid: res?.data?.generatedUUID,
+              icon: res?.data?.path
+                ? `${
+                    import.meta.env.VITE_SUPABASE_URL
+                  }/storage/v1/object/public/media/${res.data.path}`
+                : null,
+              zone_name: encodeURIComponent(el?.name),
+              region_code: encodeURIComponent(el?.name)?.split(" ").join("_"),
+              region_name: encodeURIComponent(el?.name),
+            },
+          }),
         };
       } catch (error) {
         return { ...el, error: { message: "Upload failed" } };
       }
+    } else {
+      const uuid = crypto.randomUUID();
+      return {
+        ...el,
+        id: uuid,
+        ...(groupPayload?.name?.toLowerCase() === "regions" && {
+          data: {
+            guid: uuid,
+            icon: null,
+            zone_name: encodeURIComponent(el?.name),
+            region_code: encodeURIComponent(el?.name)?.split(" ").join("_"),
+            region_name: encodeURIComponent(el?.name),
+          },
+        }),
+      };
     }
-    return { ...el };
   });
 
   const tagsWithUploadedIcons = await Promise.all(uploadPromises);
@@ -138,7 +166,12 @@ export const addGroup = async (payload) => {
       _name: groupPayload.name,
       _group_category: groupPayload.group_category,
       _type: groupPayload.type,
-      _tags: tagsWithUploadedIcons.map(({ name, icon }) => ({ name, icon })),
+      _tags: tagsWithUploadedIcons.map(({ id, name, icon, data }) => ({
+        id,
+        name,
+        icon,
+        data,
+      })),
     })
   );
 
@@ -244,16 +277,45 @@ we need to clean up any uploaded icons for tags that were uploaded successfully.
             const publicUrl = `${
               import.meta.env.VITE_SUPABASE_URL
             }/storage/v1/object/public/media/${res.data.path}`;
-            return { ...tag, icon: publicUrl };
+
+            return {
+              ...tag,
+              tag_id: tag?.id || res?.data?.generatedUUID,
+              icon: publicUrl,
+              ...(groupPayload?.name?.toLowerCase() == "regions" && {
+                data: {
+                  guid: tag?.id || res?.data?.generatedUUID,
+                  icon: publicUrl,
+                  zone_name: tag?.name,
+                  region_code: tag?.name?.split(" ").join("_"),
+                  region_name: tag?.name,
+                },
+              }),
+            };
           }
         } else {
-          return selectedTagRes;
+          return {
+            ...selectedTagRes,
+          };
         }
       } catch (err) {
         return { ...tag, error: { message: "Upload failed" } };
       }
-
-      return tag;
+      const uuid = crypto.randomUUID();
+      return {
+        ...tag,
+        tag_id: tag?.id || uuid,
+        icon: tag?.icon || null,
+        ...(groupPayload?.name?.toLowerCase() == "regions" && {
+          data: {
+            guid: tag?.id || uuid,
+            icon: tag?.icon || null,
+            zone_name: tag?.name,
+            region_code: tag?.name?.split(" ").join("_"),
+            region_name: tag?.name,
+          },
+        }),
+      };
     })
   );
 

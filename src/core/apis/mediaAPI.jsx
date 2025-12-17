@@ -44,6 +44,12 @@ so to not delete the newly replaced one we added uuids
 
       return query;
     });
+
+    if (!imageRes.data) {
+      imageRes.data = {};
+    }
+
+    imageRes.data["generatedUUID"] = uuid;
     return imageRes;
   } catch (error) {
     throw error;

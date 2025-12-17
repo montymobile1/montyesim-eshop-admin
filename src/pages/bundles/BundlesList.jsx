@@ -311,7 +311,11 @@ const BundleList = () => {
         }
         rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
-          setSearchQueries({ ...searchQueries, pageSize: e.target.value });
+          setSearchQueries({
+            ...searchQueries,
+            page: 0,
+            pageSize: e.target.value,
+          });
         }}
       />
 

@@ -186,7 +186,7 @@ export const FormDropdownList = (props) => {
 };
 
 export const FormAvatarEditor = (props) => {
-  const { value, name, onChange } = props;
+  const { value, name, onChange, helperText } = props;
   const [open, setOpen] = useState(false);
 
   let passedValue = null;
@@ -238,6 +238,11 @@ export const FormAvatarEditor = (props) => {
           )}
         </IconButton>
       </div>
+      {helperText !== "" && (
+        <FormControl>
+          <FormHelperText>{helperText}</FormHelperText>
+        </FormControl>
+      )}
       {open && (
         <AvatarEditorComponent
           value={passedValue}

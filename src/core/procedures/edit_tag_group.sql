@@ -25,11 +25,13 @@ begin
   end if;
 
   -- Step 3: Insert new tags
-  insert into tag (name, icon, tag_group_id)
-  select 
-    t->>'name',
-    t->>'icon',
-    p_id
+  insert into tag (id, name, icon, tag_group_id, data)
+select 
+    (t->>'tag_id')::uuid,  -- id from JSON
+    t->>'name',             -- name
+    t->>'icon',             -- icon
+    p_id,                   -- tag_group_id
+    t->'data'               -- JSON object stored in 'data' column
   from jsonb_array_elements(p_new_tags) as t;
 
   -- Step 4: Update existing tags
