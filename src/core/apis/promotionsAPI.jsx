@@ -148,6 +148,7 @@ export const deletePromotion = async (promoCode) => {
   }
 
   const res = await api(() => {
+    console.log("function");
     let query = supabase.from("promotion").delete().in("code", [promoCode]);
 
     return query;
