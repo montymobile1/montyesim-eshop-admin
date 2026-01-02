@@ -53,7 +53,7 @@ const SettingsLogs = () => {
 
   useEffect(() => {
     getLogs();
-  }, []);
+  }, [searchQueries]);
   return (
     <Card className="page-card">
       <TableComponent
