@@ -49,19 +49,19 @@ export const updateSettings = async (
     });
 
     if (!res?.error) {
-      // if (isDirty) {
-      //   await api(() => {
-      //     return supabase.from("audit_log").insert([
-      //       {
-      //         table_name: "app_config",
-      //         old_data: JSON.stringify(data),
-      //         new_data: JSON.stringify(payload),
-      //         changed_by: user?.user_info?.id,
-      //         operation: "UPDATE",
-      //       },
-      //     ]);
-      //   });
-      // }
+      if (isDirty) {
+        await api(() => {
+          return supabase.from("audit_log").insert([
+            {
+              table_name: "app_config",
+              old_data: JSON.stringify(data),
+              new_data: JSON.stringify(payload),
+              changed_by: user?.user_info?.id,
+              operation: "UPDATE",
+            },
+          ]);
+        });
+      }
 
       // Perform delete
       await api(() => {
@@ -105,7 +105,7 @@ export const getAllSettingsLogs = async ({ page, pageSize }) => {
     });
 
     const userIds = [
-      ...new Set(dataRes.data.map((order) => order?.changed_by)),
+      ...new Set(dataRes?.data?.map((order) => order?.changed_by)),
     ];
 
     // Step 3: Fetch user_copy info
@@ -117,9 +117,9 @@ export const getAllSettingsLogs = async ({ page, pageSize }) => {
     if (error) throw error;
 
     // Step 4: Merge user info into orders
-    const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
+    const userMap = Object.fromEntries(users?.map((u) => [u.id, u]));
 
-    const enrichedRes = dataRes.data.map((row) => ({
+    const enrichedRes = dataRes?.data?.map((row) => ({
       ...row,
       user: userMap[row.changed_by] || null,
     }));

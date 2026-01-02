@@ -1,24 +1,16 @@
-import React, { useEffect, useState } from "react";
-import TableComponent from "../../Components/shared/table-component/TableComponent";
-import {
-  Accordion,
-  Card,
-  IconButton,
-  TableCell,
-  TablePagination,
-} from "@mui/material";
-import RowComponent from "../../Components/shared/table-component/RowComponent";
-import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
-import { getAllSettingsLogs } from "../../core/apis/settingsAPI";
-import { toast } from "react-toastify";
-import SettingsLogsDetail from "./SettingsLogsDetail";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import { Card, IconButton, TableCell, TablePagination } from "@mui/material";
+import dayjs from "dayjs";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import RowComponent from "../../Components/shared/table-component/RowComponent";
+import TableComponent from "../../Components/shared/table-component/TableComponent";
+import { getAllSettingsLogs } from "../../core/apis/settingsAPI";
+import SettingsLogsDetail from "./SettingsLogsDetail";
 
 const SettingsLogs = () => {
   const [loading, setLoading] = useState(false);
   const [totalRows, setTotalRows] = useState(0);
-  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [expand, setExpand] = useState(null);
   const [searchQueries, setSearchQueries] = useState({
@@ -31,35 +23,34 @@ const SettingsLogs = () => {
   const getLogs = async () => {
     setLoading(true);
 
-    try {
-      const { page, pageSize, user } = searchQueries;
-      getAllSettingsLogs({
-        page,
-        pageSize,
+    const { page, pageSize } = searchQueries;
+    getAllSettingsLogs({
+      page,
+      pageSize,
+    })
+      .then((res) => {
+        if (res?.error) {
+          toast.error(res?.error);
+          setData([]);
+          setTotalRows(0);
+        } else {
+          setTotalRows(res?.count || 0);
+          setData(
+            res?.data?.map((el) => ({
+              ...el,
+            }))
+          );
+        }
       })
-        .then((res) => {
-          if (res?.error) {
-            toast.error(res?.error);
-            setData([]);
-            setTotalRows(0);
-          } else {
-            setTotalRows(res?.count || 0);
-            setData(
-              res?.data?.map((el) => ({
-                ...el,
-              }))
-            );
-          }
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } catch (e) {
-      console.error("Failed to load devices:", e);
-      toast.error("Failed to load devices");
+      .catch((e) => {
+        console.error("Failed to load devices:", e);
+        toast.error("Failed to load devices");
 
-      setLoading(false);
-    }
+        setLoading(false);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -120,7 +111,11 @@ const SettingsLogs = () => {
         }}
         rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
-          setSearchQueries({ ...searchQueries, pageSize: e.target.value });
+          setSearchQueries({
+            ...searchQueries,
+            page: 0,
+            pageSize: e.target.value,
+          });
         }}
       />
     </Card>

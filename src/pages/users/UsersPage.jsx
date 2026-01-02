@@ -32,36 +32,35 @@ function UsersPage() {
   const getUsers = () => {
     setLoading(true);
 
-    try {
-      const { name, page, pageSize } = searchQueries;
-      getAllUsers({
-        page,
-        pageSize,
-        name,
-      })
-        .then((res) => {
-          if (res?.error) {
-            toast.error(res?.error);
-            setLoading(false);
-            setData([]);
-            setTotalRows(0);
-          } else {
-            setTotalRows(res?.count || 0);
-            setData(
-              res?.data?.map((el) => ({
-                ...el,
-                ...el?.metadata,
-              }))
-            );
-          }
-        })
-        .finally(() => {
+    const { name, page, pageSize } = searchQueries;
+    getAllUsers({
+      page,
+      pageSize,
+      name,
+    })
+      .then((res) => {
+        if (res?.error) {
+          toast.error(res?.error);
           setLoading(false);
-        });
-    } catch (e) {
-      toast.error(e?.message || "Fail to display data");
-      setLoading(false);
-    }
+          setData([]);
+          setTotalRows(0);
+        } else {
+          setTotalRows(res?.count || 0);
+          setData(
+            res?.data?.map((el) => ({
+              ...el,
+              ...el?.metadata,
+            }))
+          );
+        }
+      })
+      .catch((e) => {
+        toast.error(e?.message || "Fail to display data");
+        setLoading(false);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {

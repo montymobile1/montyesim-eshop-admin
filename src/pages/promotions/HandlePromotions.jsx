@@ -384,13 +384,14 @@ const HandlePromotions = () => {
 
         <div className={"flex flex-wrap gap-[1rem]"}>
           <div className={"flex-1 min-w-[200px]"}>
-            <label>Name* </label>
+            <label htmlFor="name">Name* </label>
             <Controller
               render={({
                 field: { onChange, value },
                 fieldState: { error },
               }) => (
                 <FormInput
+                  id={"name"}
                   placeholder={"Enter Name"}
                   value={value}
                   onChange={(value) => {
@@ -422,13 +423,14 @@ const HandlePromotions = () => {
             />
           </div>
           <div className={"flex-1 min-w-[200px]"}>
-            <label>Code* </label>
+            <label htmlFor="code">Code* </label>
             <Controller
               render={({
                 field: { onChange, value },
                 fieldState: { error },
               }) => (
                 <FormInput
+                  id={"code"}
                   placeholder={"Enter Code"}
                   value={value}
                   onChange={(value) => {
@@ -469,8 +471,9 @@ const HandlePromotions = () => {
         </div>
         <div className={"flex flex-wrap gap-[1rem]"}>
           <div className={"flex-1 min-w-[200px]"}>
-            <label>Rule* </label>
+            <label htmlFor="rule_id">Rule* </label>
             <Controller
+              id={"rule_id"}
               render={({
                 field: { onChange, value },
                 fieldState: { error },
@@ -506,8 +509,9 @@ const HandlePromotions = () => {
             )}
           </div>
           <div className={"flex-1 min-w-[200px]"}>
-            <label>{label}* </label>
+            <label htmlFor="amount">{label}* </label>
             <Controller
+              id={"amount"}
               render={({
                 field: { onChange, value },
                 fieldState: { error },
@@ -530,8 +534,9 @@ const HandlePromotions = () => {
           </div>
 
           <div className={"flex-1 min-w-[200px]"}>
-            <label>Duration* </label>
+            <label htmlFor="duration">Duration* </label>
             <Controller
+              id={"duration"}
               render={({
                 field: { onChange, value },
                 fieldState: { error },
@@ -558,7 +563,10 @@ const HandlePromotions = () => {
         </div>
         <div className={"flex flex-wrap gap-[1rem]"}>
           <div className={"flex-1 min-w-[200px]"}>
-            <label className={"flex flex-row items-center"}>
+            <label
+              htmlFor="bundle_code"
+              className={"flex flex-row items-center"}
+            >
               Bundles{" "}
               <Tooltip
                 title={`If no bundle is selected, the promotion will be applied to all bundles`}
@@ -569,6 +577,7 @@ const HandlePromotions = () => {
               </Tooltip>
             </label>
             <Controller
+              id={"bundle_code"}
               render={({
                 field: { onChange, value },
                 fieldState: { error },

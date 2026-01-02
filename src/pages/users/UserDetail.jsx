@@ -1,5 +1,5 @@
 import { TabContext, TabList, TabPanel } from "@mui/lab";
-import { Button, Card, CircularProgress, Grid2, Tab } from "@mui/material";
+import { Card, Grid2, Tab } from "@mui/material";
 import { useState } from "react";
 import DevicesTab from "./tabs/DevicesTab";
 import WalletTransactionsTab from "./tabs/WalletTransactionsTab";
@@ -7,9 +7,7 @@ import WalletTransactionsTab from "./tabs/WalletTransactionsTab";
 import { useParams } from "react-router-dom";
 
 const UserDetail = () => {
-  const { id } = useParams();
   const [selectedTab, setSelectedTab] = useState("1");
-  const [exporting, setExporting] = useState(false);
 
   const handleChangeSelectedTab = (event, newValue) => {
     setSelectedTab(newValue);
@@ -26,7 +24,9 @@ const UserDetail = () => {
             >
               <Tab label="Devices" value="1" />
 
-              <Tab label="Wallet Transactions" value="2" />
+              {import.meta.env.VITE_SUPPORT_PROMO == "true" && (
+                <Tab label="Wallet Transactions" value="2" />
+              )}
             </TabList>
           </Grid2>
           <Grid2 size={{ xs: 12 }}>

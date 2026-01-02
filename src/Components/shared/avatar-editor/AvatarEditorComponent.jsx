@@ -41,7 +41,41 @@ const AvatarEditorComponent = ({ open, value, onClose, updateImage }) => {
       onClose={onClose}
       onConfirm={() => handleSave()}
     >
-      {!image ? (
+      {image ? (
+        <div className={"flex flex-col justify-center items-center gap-[1rem]"}>
+          <AvatarEditor
+            ref={cropRef}
+            image={image}
+            style={{ width: "100%", height: "100%" }}
+            border={50}
+            borderRadius={150}
+            color={[0, 0, 0, 0.72]}
+            scale={slideValue / 10}
+            rotate={0}
+          />
+          <div
+            className={
+              "flex flex-row gap-[0.5rem] justify-between w-full items-center"
+            }
+          >
+            <Slider
+              min={2}
+              max={50}
+              sx={{
+                margin: "0 auto",
+                width: "80%",
+              }}
+              size="medium"
+              defaultValue={slideValue}
+              value={slideValue}
+              onChange={(e) => setSlideValue(e.target.value)}
+            />
+            <IconButton onClick={() => handleRemove()}>
+              <Delete />
+            </IconButton>
+          </div>
+        </div>
+      ) : (
         <div className={"flex flex-col gap-[0.5rem]"}>
           <Dropzone
             accept={{
@@ -83,40 +117,6 @@ const AvatarEditorComponent = ({ open, value, onClose, updateImage }) => {
             )}
           </Dropzone>
           {error && <FormHelperText>{error?.message}</FormHelperText>}
-        </div>
-      ) : (
-        <div className={"flex flex-col justify-center items-center gap-[1rem]"}>
-          <AvatarEditor
-            ref={cropRef}
-            image={image}
-            style={{ width: "100%", height: "100%" }}
-            border={50}
-            borderRadius={150}
-            color={[0, 0, 0, 0.72]}
-            scale={slideValue / 10}
-            rotate={0}
-          />
-          <div
-            className={
-              "flex flex-row gap-[0.5rem] justify-between w-full items-center"
-            }
-          >
-            <Slider
-              min={2}
-              max={50}
-              sx={{
-                margin: "0 auto",
-                width: "80%",
-              }}
-              size="medium"
-              defaultValue={slideValue}
-              value={slideValue}
-              onChange={(e) => setSlideValue(e.target.value)}
-            />
-            <IconButton onClick={() => handleRemove()}>
-              <Delete />
-            </IconButton>
-          </div>
         </div>
       )}
     </MuiModal>

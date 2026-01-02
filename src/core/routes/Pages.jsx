@@ -104,108 +104,120 @@ export const MenuRoutes = [
       },
     ],
   },
-  {
-    parentName: null,
-    parentGuid: null,
-    displayOrder: 3,
-    iconUri: "fa-percent",
-    recordGuid: "7",
-    position: 100,
-    group: 1,
-    menuDetail: [
-      {
-        name: "Promotions Management",
-        description: "Promotions Management",
-        languageCode: "en",
-      },
-    ],
-    children: [
-      {
-        parentName: null,
-        parentGuid: null,
-        displayOrder: 4,
-        uri: "rules",
-        recordGuid: "8",
-        position: 100,
-        group: 1,
-        menuDetail: [
-          {
-            name: "Rules",
-            description: "Rules",
-            languageCode: "en",
-          },
-        ],
-      },
-      {
-        parentName: null,
-        parentGuid: null,
-        displayOrder: 5,
-        uri: "promotions",
-        recordGuid: "9",
-        position: 100,
-        group: 1,
-        menuDetail: [
-          {
-            name: "Promotions",
-            description: "Promotion",
-            languageCode: "en",
-          },
-        ],
-      },
-      {
-        parentName: null,
-        parentGuid: null,
-        displayOrder: 6,
-        uri: "promo-analysis",
-        recordGuid: "10",
-        position: 100,
-        group: 1,
-        menuDetail: [
-          {
-            name: "Promo Analysis",
-            description: "Promo Analysis",
-            languageCode: "en",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    parentName: null,
-    parentGuid: null,
-    displayOrder: 7,
-    uri: "vouchers",
-    iconUri: "fa-gift",
-    recordGuid: "11",
-    position: 100,
-    group: 1,
-    menuDetail: [
-      {
-        name: "Vouchers",
-        description: "Vouchers",
-        languageCode: "en",
-      },
-    ],
-    children: [],
-  },
-  {
-    parentName: null,
-    parentGuid: null,
-    displayOrder: 8,
-    uri: "referrals",
-    iconUri: "fa-user-friends",
-    recordGuid: "12",
-    position: 100,
-    group: 1,
-    menuDetail: [
-      {
-        name: "Referrals",
-        description: "Referrals",
-        languageCode: "en",
-      },
-    ],
-    children: [],
-  },
+  ...(import.meta.env.VITE_SUPPORT_PROMO == "true"
+    ? [
+        {
+          parentName: null,
+          parentGuid: null,
+          displayOrder: 3,
+          iconUri: "fa-percent",
+          recordGuid: "7",
+          position: 100,
+          group: 1,
+          menuDetail: [
+            {
+              name: "Promotions Management",
+              description: "Promotions Management",
+              languageCode: "en",
+            },
+          ],
+          children: [
+            {
+              parentName: null,
+              parentGuid: null,
+              displayOrder: 4,
+              uri: "rules",
+              recordGuid: "8",
+              position: 100,
+              group: 1,
+              menuDetail: [
+                {
+                  name: "Rules",
+                  description: "Rules",
+                  languageCode: "en",
+                },
+              ],
+            },
+            {
+              parentName: null,
+              parentGuid: null,
+              displayOrder: 5,
+              uri: "promotions",
+              recordGuid: "9",
+              position: 100,
+              group: 1,
+              menuDetail: [
+                {
+                  name: "Promotions",
+                  description: "Promotion",
+                  languageCode: "en",
+                },
+              ],
+            },
+            {
+              parentName: null,
+              parentGuid: null,
+              displayOrder: 6,
+              uri: "promo-analysis",
+              recordGuid: "10",
+              position: 100,
+              group: 1,
+              menuDetail: [
+                {
+                  name: "Promo Analysis",
+                  description: "Promo Analysis",
+                  languageCode: "en",
+                },
+              ],
+            },
+          ],
+        },
+      ]
+    : []),
+  ...(import.meta.env.VITE_APP_VOUCHER_CODE == "true"
+    ? [
+        {
+          parentName: null,
+          parentGuid: null,
+          displayOrder: 7,
+          uri: "vouchers",
+          iconUri: "fa-gift",
+          recordGuid: "11",
+          position: 100,
+          group: 1,
+          menuDetail: [
+            {
+              name: "Vouchers",
+              description: "Vouchers",
+              languageCode: "en",
+            },
+          ],
+          children: [],
+        },
+      ]
+    : []),
+  ...(import.meta.env.VITE_APP_REFER_AND_EARN == "true"
+    ? [
+        {
+          parentName: null,
+          parentGuid: null,
+          displayOrder: 8,
+          uri: "referrals",
+          iconUri: "fa-user-friends",
+          recordGuid: "12",
+          position: 100,
+          group: 1,
+          menuDetail: [
+            {
+              name: "Referrals",
+              description: "Referrals",
+              languageCode: "en",
+            },
+          ],
+          children: [],
+        },
+      ]
+    : []),
   {
     parentName: null,
     parentGuid: null,

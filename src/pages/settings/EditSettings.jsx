@@ -35,10 +35,9 @@ const EditSettings = () => {
   const {
     control,
     getValues,
-    errors,
-    handleSubmit,
+
     reset,
-    formState: { isDirty, dirtyFields },
+    formState: { isDirty },
   } = useForm({
     resolver: yupResolver(schema),
 

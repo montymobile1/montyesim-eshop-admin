@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
     plugins: [tailwindcss(), react(), eslint()],
     server: {
       open: true,
-      port: parseInt(env.VITE_PORT),
+      port: Number.parseInt(env.VITE_PORT),
       hmr: true,
       hot: true,
     },

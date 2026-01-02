@@ -1,4 +1,3 @@
-import { escapeIlikeValue } from "../helpers/utilFunctions";
 import { api } from "./apiInstance";
 import supabase from "./supabase";
 

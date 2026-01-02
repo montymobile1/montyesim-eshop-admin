@@ -1,5 +1,3 @@
-import { alpha } from "@mui/system";
-
 export const InputTheme = ({ theme }) => {
   return {
     styleOverrides: {

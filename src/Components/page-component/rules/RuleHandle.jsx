@@ -140,13 +140,14 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
           <h1 className={"text-start"}>{data ? "Edit Rule" : "Add Rule"}</h1>
           <div className={"grid grid-cols-1 md:grid-cols-2 gap-2"}>
             <div className={"label-input-wrapper"}>
-              <label>Action*</label>
+              <label htmlFor="promotion_rule_action_id">Action*</label>
               <Controller
                 render={({
                   field: { onChange, value },
                   fieldState: { error },
                 }) => (
                   <FormDropdownList
+                    id={"promotion_rule_action_id"}
                     placeholder={"Select Action"}
                     value={value || null}
                     data={actions || []}
@@ -161,13 +162,14 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
               />
             </div>
             <div className={"label-input-wrapper"}>
-              <label>Event*</label>
+              <label htmlFor="promotion_rule_event_id">Event*</label>
               <Controller
                 render={({
                   field: { onChange, value },
                   fieldState: { error },
                 }) => (
                   <FormDropdownList
+                    id={"promotion_rule_event_id"}
                     placeholder={"Select Event"}
                     value={value || null}
                     data={events || []}
@@ -182,18 +184,19 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
               />
             </div>
             <div className={"label-input-wrapper"}>
-              <label>Max Usage*</label>
+              <label htmlFor="max_usage">Max Usage*</label>
               <Controller
                 render={({
                   field: { onChange, value },
                   fieldState: { error },
                 }) => (
                   <FormInput
+                    id={"max_usage"}
                     type="number"
                     placeholder={"Enter Max Usage"}
                     value={value}
                     helperText={error?.message}
-                    onChange={(value) => onChange(!value ? null : value)}
+                    onChange={(value) => onChange(value ?? null)}
                     disabled={data}
                   />
                 )}
@@ -202,13 +205,14 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
               />
             </div>
             <div className={"label-input-wrapper"}>
-              <label>Beneficiary*</label>
+              <label htmlFor="beneficiary">Beneficiary*</label>
               <Controller
                 render={({
                   field: { onChange, value },
                   fieldState: { error },
                 }) => (
                   <FormDropdownList
+                    id={"beneficiary"}
                     placeholder={"Select beneficiary"}
                     value={value || null}
                     data={beneficiaryData}

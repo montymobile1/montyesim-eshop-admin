@@ -50,12 +50,12 @@ function App() {
   useEffect(() => {
     const localPackageVersion = localStorage.getItem("PACKAGE_VERSION");
 
-    if (!localPackageVersion) {
-      localStorage.setItem("PACKAGE_VERSION", appVersion);
-    } else {
+    if (localPackageVersion) {
       const persistor = persistStore(store);
 
-      if (localPackageVersion !== appVersion) {
+      if (localPackageVersion === appVersion) {
+        console.log("Versions match. No action required");
+      } else {
         persistor
           .purge()
           .then(() => {
@@ -72,9 +72,9 @@ function App() {
           .catch((error) => {
             console.error("Error purging Redux Persist state:", error);
           });
-      } else {
-        console.log("Versions match. No action required");
       }
+    } else {
+      localStorage.setItem("PACKAGE_VERSION", appVersion);
     }
   }, [localStorage.getItem("PACKAGE_VERSION")]);
 

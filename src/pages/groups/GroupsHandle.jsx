@@ -85,7 +85,7 @@ const schema = yup.object().shape({
 const GroupsHandle = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [loading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(false);
   const [deletedTags] = useState([]);
@@ -116,7 +116,7 @@ const GroupsHandle = () => {
   console.log(errors, "errorrss");
   useEffect(() => {
     if (id) {
-      setIsLoading(true);
+      setLoading(true);
       getGroupById(id)
         .then((res) => {
           if (!res?.error) {
@@ -142,7 +142,7 @@ const GroupsHandle = () => {
           }
         })
         .finally(() => {
-          setIsLoading(false);
+          setLoading(false);
         });
     }
   }, []);
@@ -252,8 +252,9 @@ const GroupsHandle = () => {
 
         <div className={"flex flex-wrap gap-[1rem]"}>
           <div className={"flex-1 min-w-[200px]"}>
-            <label>Name* </label>
+            <label htmlFor="name">Name* </label>
             <Controller
+              id={"name"}
               render={({
                 field: { onChange, value },
                 fieldState: { error },

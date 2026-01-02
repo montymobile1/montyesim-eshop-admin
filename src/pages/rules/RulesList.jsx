@@ -46,39 +46,38 @@ function RulesList() {
   const getRules = () => {
     setLoading(true);
 
-    try {
-      const { name, page, pageSize, action, event } = searchQueries;
+    const { name, page, pageSize, action, event } = searchQueries;
 
-      getAllRules({
-        page,
-        pageSize,
-        name,
-        action: action?.id || null,
-        event: event?.id || null,
-      })
-        .then((res) => {
-          if (res?.error) {
-            toast.error(res?.error);
-            setLoading(false);
-            setData([]);
-            setTotalRows(0);
-          } else {
-            setTotalRows(res?.count || 0);
-            setData(
-              res?.data?.map((el) => ({
-                ...el,
-                ...el?.metadata,
-              }))
-            );
-          }
-        })
-        .finally(() => {
+    getAllRules({
+      page,
+      pageSize,
+      name,
+      action: action?.id || null,
+      event: event?.id || null,
+    })
+      .then((res) => {
+        if (res?.error) {
+          toast.error(res?.error);
           setLoading(false);
-        });
-    } catch (e) {
-      toast.error(e?.message || "Fail to display data");
-      setLoading(false);
-    }
+          setData([]);
+          setTotalRows(0);
+        } else {
+          setTotalRows(res?.count || 0);
+          setData(
+            res?.data?.map((el) => ({
+              ...el,
+              ...el?.metadata,
+            }))
+          );
+        }
+      })
+      .catch((e) => {
+        toast.error(e?.message || "Fail to display data");
+        setLoading(false);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const handleDeleteRule = (id) => {

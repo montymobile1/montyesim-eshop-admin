@@ -1,5 +1,4 @@
 import { FormHelperText, Grid } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "./styles/datepicker.scss";
@@ -14,8 +13,6 @@ export default function CustomDatePicker({
   minDate = null,
   maxDate = null,
 }) {
-  const theme = useTheme();
-
   let className;
 
   if (error) {

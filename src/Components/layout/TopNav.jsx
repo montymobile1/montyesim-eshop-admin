@@ -1,28 +1,16 @@
-import { KeyboardDoubleArrowRight } from "@mui/icons-material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
-import {
-  Box,
-  IconButton,
-  Menu,
-  MenuItem,
-  Tooltip,
-  Typography,
-  useMediaQuery,
-} from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import { Box, IconButton, Menu, MenuItem, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import clsx from "clsx";
-import { useMemo, useState } from "react";
-import MenuIcon from "@mui/icons-material/Menu";
+import { useState } from "react";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
-import { userSignout } from "../../core/apis/usersAPI";
-import useRouteName from "../../core/hooks/useRouteName";
-import { SignOut } from "../../Redux/reducers/AuthReducer";
 import { toast } from "react-toastify";
-import IconImage from "../shared/icon-image/IconImage";
+import { userSignout } from "../../core/apis/usersAPI";
+import { SignOut } from "../../Redux/reducers/AuthReducer";
 import { toggleSidebar } from "../../Redux/reducers/SidebarReducer";
 
 export default function TopNav() {
@@ -32,7 +20,6 @@ export default function TopNav() {
   const theme = useTheme();
   const dispatch = useDispatch();
   const { pathname } = useLocation();
-  const routeName = useRouteName();
   const navigate = useNavigate();
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -58,10 +45,6 @@ export default function TopNav() {
       }
     });
   };
-
-  const pathnameLength = useMemo(() => {
-    return pathname.split("/")?.length;
-  }, [pathname]);
 
   return (
     <Box

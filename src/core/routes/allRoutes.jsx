@@ -21,6 +21,8 @@ import VoucherPage from "../../pages/vouchers/VoucherPage";
 import Settings from "../../pages/settings/Settings";
 import EditSettings from "../../pages/settings/EditSettings";
 import Referrals from "../../pages/referral/Referrals";
+import SettingsLogs from "../../pages/settings/SettingsLogs";
+import SettingsLogsDetail from "../../pages/settings/SettingsLogsDetail";
 
 export const privateRoutes = [
   {
@@ -121,13 +123,17 @@ export const privateRoutes = [
         name: "Rules",
         regex: "^/rules/?$",
       },
-      {
-        path: "/vouchers",
-        element: <VoucherPage />,
-        key: "/vouchers",
-        name: "Vouchers",
-        regex: "^/vouchers/?$",
-      },
+      ...(import.meta.env.VITE_APP_VOUCHER_CODE == "true"
+        ? [
+            {
+              path: "/vouchers",
+              element: <VoucherPage />,
+              key: "/vouchers",
+              name: "Vouchers",
+              regex: "^/vouchers/?$",
+            },
+          ]
+        : []),
       {
         path: "/settings",
         element: <Settings />,
@@ -144,42 +150,58 @@ export const privateRoutes = [
         regex: "^/settings/edit/?$",
         superAdminAccess: true,
       },
+      {
+        path: "/settings/logs",
+        element: <SettingsLogs />,
+        key: "/settings/logs",
+        name: "Settings Logs",
+        regex: "^/settings/logs/?$",
+        superAdminAccess: true,
+      },
 
-      {
-        path: "/promotions",
-        element: <PromotionsList />,
-        key: "/promotions",
-        name: "Promotions",
-        regex: "^/promotions/?$",
-      },
-      {
-        path: "/promotions/add",
-        element: <HandlePromotions />,
-        key: "/promotions/add",
-        name: "Add Promotion",
-        regex: "^/promotions/add?$",
-      },
-      {
-        path: "/promotions/:id",
-        element: <HandlePromotions />,
-        key: "/promotions/:id",
-        name: "Edit Promotion",
-        regex: "^/promotions/([0-9a-fA-F-]+)?$",
-      },
-      {
-        path: "/promo-analysis",
-        element: <PromoAnalysis />,
-        key: "/promo-analysis",
-        name: "Promo Analysis",
-        regex: "^/promo-analysis/?$",
-      },
-      {
-        path: "/referrals",
-        element: <Referrals />,
-        key: "/referrals",
-        name: "Referrals",
-        regex: "^/referrals/?$",
-      },
+      ...(import.meta.env.VITE_SUPPORT_PROMO == "true"
+        ? [
+            {
+              path: "/promotions",
+              element: <PromotionsList />,
+              key: "/promotions",
+              name: "Promotions",
+              regex: "^/promotions/?$",
+            },
+            {
+              path: "/promotions/add",
+              element: <HandlePromotions />,
+              key: "/promotions/add",
+              name: "Add Promotion",
+              regex: "^/promotions/add?$",
+            },
+            {
+              path: "/promotions/:id",
+              element: <HandlePromotions />,
+              key: "/promotions/:id",
+              name: "Edit Promotion",
+              regex: "^/promotions/([0-9a-fA-F-]+)?$",
+            },
+            {
+              path: "/promo-analysis",
+              element: <PromoAnalysis />,
+              key: "/promo-analysis",
+              name: "Promo Analysis",
+              regex: "^/promo-analysis/?$",
+            },
+          ]
+        : []),
+      ...(import.meta.env.VITE_APP_REFER_AND_EARN == "true"
+        ? [
+            {
+              path: "/referrals",
+              element: <Referrals />,
+              key: "/referrals",
+              name: "Referrals",
+              regex: "^/referrals/?$",
+            },
+          ]
+        : []),
       {
         path: "*",
         element: <PageNotFound />,

@@ -200,18 +200,11 @@ export const FormAvatarEditor = (props) => {
 
   return (
     <>
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type={"button"}
         onClick={() => setOpen(true)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setOpen(true);
-          }
-        }}
         className={
-          "cursor-pointer border border-gray-200 rounded-2xl h-[38px] flex flex-row justify-between gap-[0.5rem] p-1 items-center min-w-[200px] "
+          "w-full cursor-pointer border border-gray-200 !rounded-2xl h-[38px] flex flex-row justify-between gap-[0.5rem] p-1 items-center min-w-[200px] "
         }
       >
         {value ? (
@@ -237,7 +230,7 @@ export const FormAvatarEditor = (props) => {
             <FileUploadIcon fontSize="small" onClick={() => setOpen(true)} />
           )}
         </IconButton>
-      </div>
+      </button>
       {helperText !== "" && (
         <FormControl>
           <FormHelperText>{helperText}</FormHelperText>
@@ -299,7 +292,7 @@ export const FormPaginationDropdownList = (props) => {
   return (
     <Autocomplete
       size="small"
-      disabled={disabled ? disabled : false}
+      disabled={disabled || false}
       fullWidth
       onInputChange={(event, newInputValue, reason) => {
         if (reason === "input") {
@@ -375,7 +368,7 @@ export const FormDateRange = (props) => {
           handleDateChange(update);
         }}
         disabled={disabled}
-        isClearable={disabled ? false : true}
+        isClearable={!disabled}
       />
       {helperText !== "" && (
         <FormControl>

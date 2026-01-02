@@ -24,7 +24,7 @@ export const upsertTag = async (payload) => {
     const res = await api(() => {
       let query = supabase.from("tag").upsert(
         payload?.tagsWithUploadedIcons?.map((el) => {
-          return { ...el, tag_group_id: parseInt(payload?.group_id) };
+          return { ...el, tag_group_id: Number.parseInt(payload?.group_id) };
         })
       );
       return query;

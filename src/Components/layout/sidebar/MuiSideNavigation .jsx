@@ -39,7 +39,7 @@ const MuiSideNavigation = () => {
 
   const getStyles = (level) => ({
     padding: `${6 - level * 5}px 14px !important`,
-    fontSize: `${14 - parseInt(level) * 1}px !important`,
+    fontSize: `${14 - Number.parseInt(level) * 1}px !important`,
     borderRadius: "0px",
   });
   const IsActive = (item) => {
@@ -57,7 +57,7 @@ const MuiSideNavigation = () => {
       if (!open && hasChildren) {
         return (
           <ToolTipMenu
-            key={index}
+            key={item?.recordGuid}
             item={item}
             IsActive={IsActive}
             toggleMenu={toggleMenu}
@@ -99,7 +99,7 @@ const MuiSideNavigation = () => {
           overflowX: "hidden",
           display: "flex",
           flexDirection: "column",
-          alignItems: !open ? "center" : "",
+          alignItems: open ? "" : "center",
         },
       }}
     >

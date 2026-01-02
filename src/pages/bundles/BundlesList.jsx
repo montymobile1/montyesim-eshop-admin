@@ -6,7 +6,6 @@ import {
   FormControl,
   Grid2,
   IconButton,
-  Switch,
   TableCell,
   TablePagination,
   TextField,

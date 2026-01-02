@@ -129,10 +129,14 @@ export default function VoucherForm({ voucher = null, onSuccess, OnCancel }) {
       className="flex flex-col gap-4 w-full"
     >
       <div>
-        <label className="block mb-1 text-sm font-medium text-gray-200">
+        <label
+          htmlFor={"code"}
+          className="block mb-1 text-sm font-medium text-gray-200"
+        >
           Code
         </label>
         <Controller
+          id={"code"}
           name="code"
           control={control}
           render={({ field: { onChange, value }, fieldState: { error } }) => (
@@ -169,10 +173,14 @@ export default function VoucherForm({ voucher = null, onSuccess, OnCancel }) {
       </div>
 
       <div>
-        <label className="block mb-1 text-sm font-medium text-gray-200">
+        <label
+          htmlFor="amount"
+          className="block mb-1 text-sm font-medium text-gray-200"
+        >
           Amount
         </label>
         <Controller
+          id={"amount"}
           name="amount"
           control={control}
           render={({ field }) => (
@@ -188,11 +196,15 @@ export default function VoucherForm({ voucher = null, onSuccess, OnCancel }) {
       </div>
 
       <div>
-        <label className="block mb-1 text-sm font-medium text-gray-200">
+        <label
+          htmlFor="expired_at"
+          className="block mb-1 text-sm font-medium text-gray-200"
+        >
           Expire At
         </label>
         <Controller
           name="expired_at"
+          id={"expired_at"}
           control={control}
           render={({ field }) => (
             <FormDate

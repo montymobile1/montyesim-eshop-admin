@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 //component
-import { Card, TableCell, TablePagination } from "@mui/material";
+import { TableCell, TablePagination } from "@mui/material";
 import { toast } from "react-toastify";
 import RowComponent from "../../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../../Components/shared/table-component/TableComponent";
@@ -23,34 +23,33 @@ export default function DevicesTab() {
   const getUserDevices = () => {
     setLoading(true);
 
-    try {
-      const { page, pageSize } = searchQueries;
-      getAllUserDevices({
-        page,
-        pageSize,
-        id,
+    const { page, pageSize } = searchQueries;
+    getAllUserDevices({
+      page,
+      pageSize,
+      id,
+    })
+      .then((res) => {
+        if (res?.error) {
+          toast.error(res?.error);
+          setTotalRows(0);
+          setData([]);
+        } else {
+          setTotalRows(res?.count || 0);
+          setData(
+            res?.data?.map((el) => ({
+              ...el,
+            }))
+          );
+        }
       })
-        .then((res) => {
-          if (res?.error) {
-            toast.error(res?.error);
-            setTotalRows(0);
-            setData([]);
-          } else {
-            setTotalRows(res?.count || 0);
-            setData(
-              res?.data?.map((el) => ({
-                ...el,
-              }))
-            );
-          }
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } catch (e) {
-      toast.error("Failed to load user devices");
-      setLoading(false);
-    }
+      .catch(() => {
+        toast.error("Failed to load user devices");
+        setLoading(false);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const tableHeaders = [

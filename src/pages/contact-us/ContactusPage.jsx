@@ -39,36 +39,35 @@ function ContactusPage() {
   const getContactus = async () => {
     setLoading(true);
 
-    try {
-      const { page, pageSize, name } = searchQueries;
-      getAllMessages({
-        page,
-        pageSize,
-        name,
-      })
-        .then((res) => {
-          if (res?.error) {
-            toast.error(res?.error);
+    const { page, pageSize, name } = searchQueries;
+    getAllMessages({
+      page,
+      pageSize,
+      name,
+    })
+      .then((res) => {
+        if (res?.error) {
+          toast.error(res?.error);
 
-            setData([]);
-            setTotalRows(0);
-          } else {
-            setTotalRows(res?.count || 0);
-            setData(
-              res?.data?.map((el) => ({
-                ...el,
-              }))
-            );
-          }
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } catch (e) {
-      console.error("Failed to load messages:", e);
-      toast.error("Failed to load messages");
-      setLoading(false);
-    }
+          setData([]);
+          setTotalRows(0);
+        } else {
+          setTotalRows(res?.count || 0);
+          setData(
+            res?.data?.map((el) => ({
+              ...el,
+            }))
+          );
+        }
+      })
+      .catch((e) => {
+        console.error("Failed to load messages:", e);
+        toast.error("Failed to load messages");
+        setLoading(false);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {

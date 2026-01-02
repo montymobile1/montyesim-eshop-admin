@@ -18,10 +18,10 @@ const PromotionDetail = ({ id, onClose }) => {
     setLoading(true);
     getPromotionById(id)
       .then((res) => {
-        if (!res?.error) {
-          setData(res?.data);
-        } else {
+        if (res?.error) {
           toast.error(res?.error);
+        } else {
+          setData(res?.data);
         }
       })
       .finally(() => {
@@ -66,21 +66,19 @@ const PromotionDetail = ({ id, onClose }) => {
         </div>
         <h1 className={"text-start"}>{"Promo Code Detail"}</h1>
         {loading ? (
-          Array(5)
-            .fill()
-            .map((index) => <Skeleton key={index} />)
+          new Array(5).fill().map((index) => <Skeleton key={index} />)
         ) : (
           <div className={"flex flex-col gap-1"}>
             <div>
-              <label>Name</label>
+              <p className={"font-semibold"}>Name</p>
               <p>{data?.name}</p>
             </div>
             <div>
-              <label>Code</label>
+              <p className={"font-semibold"}>Code</p>
               <p>{data?.code}</p>
             </div>
             <div>
-              <label>Rule</label>
+              <p className={"font-semibold"}>Rule</p>
               <p>
                 {data?.promotion_rule?.promotion_rule_action?.name} |{" "}
                 {data?.promotion_rule?.promotion_rule_event?.name} |{" "}
@@ -93,36 +91,36 @@ const PromotionDetail = ({ id, onClose }) => {
               </p>
             </div>
             <div>
-              <label>Amount</label>
+              <p className={"font-semibold"}>Amount</p>
               <p>
                 {data?.amount} {valueType}
               </p>
             </div>
             <div>
-              <label>Times Used</label>
+              <p className={"font-semibold"}>Times Used</p>
               <p>{data?.times_used}</p>
             </div>
             <div>
-              <label>Duration</label>
+              <p className={"font-semibold"}>Duration</p>
               <p>
                 From {dayjs(data?.valid_from).format("DD-MM-YYYY")} To{" "}
                 {dayjs(data?.valid_to).format("DD-MM-YYYY")}
               </p>
             </div>
             <div>
-              <label>Bundle Codes</label>
+              <p className={"font-semibold"}>Bundle Codes</p>
               <div
                 className={"flex flex-col gap-1 max-h-[200px] overflow-auto"}
               >
-                {!data?.bundle_code
-                  ? "All"
-                  : data?.bundle_code
-                      ?.split(",")
-                      ?.map((el) => <div key={el}>{el}</div>)}
+                {data?.bundle_code
+                  ? data.bundle_code
+                      .split(",")
+                      .map((el) => <div key={el}>{el}</div>)
+                  : "All"}
               </div>
             </div>
             <div>
-              <label>Status</label>
+              <p className={"font-semibold"}>Status</p>
               <div>
                 {" "}
                 <TagComponent value={data?.is_active ? "Active" : "Inactive"} />
