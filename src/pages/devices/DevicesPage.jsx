@@ -36,35 +36,34 @@ function DevicesPage() {
   const getDevices = async () => {
     setLoading(true);
 
-    try {
-      const { page, pageSize, user } = searchQueries;
-      getAllDevices({
-        page,
-        pageSize,
-        user,
+    const { page, pageSize, user } = searchQueries;
+    getAllDevices({
+      page,
+      pageSize,
+      user,
+    })
+      .then((res) => {
+        if (res?.error) {
+          toast.error(res?.error);
+          setData([]);
+          setTotalRows(0);
+        } else {
+          setTotalRows(res?.count || 0);
+          setData(
+            res?.data?.map((el) => ({
+              ...el,
+            }))
+          );
+        }
       })
-        .then((res) => {
-          if (res?.error) {
-            toast.error(res?.error);
-            setData([]);
-            setTotalRows(0);
-          } else {
-            setTotalRows(res?.count || 0);
-            setData(
-              res?.data?.map((el) => ({
-                ...el,
-              }))
-            );
-          }
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } catch (e) {
-      toast.error("Failed to load devices");
+      .catch((e) => {
+        toast.error("Failed to load devices");
 
-      setLoading(false);
-    }
+        setLoading(false);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
