@@ -91,7 +91,7 @@ export const AddPromotion = async (payload) => {
 
 export const editPromotion = async (payload) => {
   try {
-    const { id, ...payloadWithoutId } = payload;
+    const { id } = payload;
 
     const { data, error } = await api(() => {
       return supabase

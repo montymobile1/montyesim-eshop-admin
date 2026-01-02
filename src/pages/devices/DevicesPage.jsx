@@ -58,8 +58,6 @@ function DevicesPage() {
       })
       .catch((e) => {
         toast.error("Failed to load devices");
-
-        setLoading(false);
       })
       .finally(() => {
         setLoading(false);

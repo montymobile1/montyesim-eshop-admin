@@ -87,8 +87,6 @@ function OrdersPage() {
       .catch((e) => {
         console.error("Failed to load devices:", e);
         toast.error("Failed to load devices");
-
-        setLoading(false);
       })
       .finally(() => {
         setLoading(false);

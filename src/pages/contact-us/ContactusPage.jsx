@@ -63,7 +63,6 @@ function ContactusPage() {
       .catch((e) => {
         console.error("Failed to load messages:", e);
         toast.error("Failed to load messages");
-        setLoading(false);
       })
       .finally(() => {
         setLoading(false);

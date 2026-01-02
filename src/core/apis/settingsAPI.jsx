@@ -73,10 +73,11 @@ export const updateSettings = async (
         new_cache_key?.value == cache_key_data?.value
       ) {
         const newUuid = crypto.randomUUID();
-        const { error: updateError } = await supabase
+        await supabase
           .from("app_config")
           .update({ value: newUuid })
           .eq("key", "APP_CACHE_KEY");
+        return query;
       }
     }
 

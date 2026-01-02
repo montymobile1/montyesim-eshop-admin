@@ -57,10 +57,11 @@ export const toggleBundleStatus = async ({ id, currentValue }) => {
 
     if (!error) {
       const newUuid = crypto.randomUUID();
-      const { error: updateError } = await supabase
+      await supabase
         .from("app_config")
         .update({ value: newUuid })
         .eq("key", "APP_CACHE_KEY");
+      return query;
     }
 
     return res;
@@ -88,10 +89,11 @@ export const updateBundleTitle = async (payload) => {
 
     if (!error) {
       const newUuid = crypto.randomUUID();
-      const { error: updateError } = await supabase
+      await supabase
         .from("app_config")
         .update({ value: newUuid })
         .eq("key", "APP_CACHE_KEY");
+      return query;
     }
 
     return res;
@@ -193,10 +195,11 @@ export const assignTagsToBundle = async (bundleId, tagIds) => {
 
   if (!error) {
     const newUuid = crypto.randomUUID();
-    const { error: updateError } = await supabase
+    await supabase
       .from("app_config")
       .update({ value: newUuid })
       .eq("key", "APP_CACHE_KEY");
+    return query;
   }
 
   return { error: deleteRes?.error || upsertRes?.error };

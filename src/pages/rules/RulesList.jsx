@@ -73,7 +73,6 @@ function RulesList() {
       })
       .catch((e) => {
         toast.error(e?.message || "Fail to display data");
-        setLoading(false);
       })
       .finally(() => {
         setLoading(false);
