@@ -79,7 +79,7 @@ export default function VoucherForm({ voucher = null, onSuccess, OnCancel }) {
       checkVoucherCodeUnique(value).then((res) => {
         setCodeUnique({
           check: res?.status == 200 && res?.data?.length === 0,
-          message: res?.data?.length !== 0 ? "Code is not unique" : res?.error,
+          message: res?.data?.length == 0 ? res?.error : "Code is not unique",
           loading: false,
         });
       });
@@ -101,11 +101,11 @@ export default function VoucherForm({ voucher = null, onSuccess, OnCancel }) {
         expired_at,
       })
         .then((res) => {
-          if (!res?.error) {
-            toast.success("Voucher created successfully");
-            onSuccess && onSuccess(data);
-          } else {
+          if (res?.error) {
             toast.error(res?.error || "Failed to insert voucher");
+          } else {
+            toast.success("Voucher created successfully");
+            onSuccess?.(data);
           }
         })
         .catch((err) => {
@@ -120,7 +120,7 @@ export default function VoucherForm({ voucher = null, onSuccess, OnCancel }) {
   };
 
   const OnClose = () => {
-    OnCancel && OnCancel();
+    OnCancel?.();
   };
 
   return (

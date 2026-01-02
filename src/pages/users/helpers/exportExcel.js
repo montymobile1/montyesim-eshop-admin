@@ -19,12 +19,11 @@ export const exportReferralExcel = async (
 
     const referralData = (referrals || []).map((r) => ({
       "Refer Code": r.referral_code,
-      "Reward Amount":
-        r.amount != null ? `${r.currency || ""} ${r.amount}` : null,
-      "Modified Amount":
-        r.modified_amount != null
-          ? `${r.currency || ""} ${r.modified_amount}`
-          : null,
+      "Reward Amount": r.amount ? `${r.currency || ""} ${r.amount}` : null,
+      "Modified Amount": r.modified_amount
+        ? `${r.currency || ""} ${r.modified_amount}`
+        : null,
+
       "From Email": r.referred_to,
       "To Email": r.user_email,
       "Order Number": r.id,

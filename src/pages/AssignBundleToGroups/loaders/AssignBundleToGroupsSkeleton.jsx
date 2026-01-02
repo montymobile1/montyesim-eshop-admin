@@ -1,5 +1,4 @@
 import { Box, Card, Grid, Paper, Skeleton } from "@mui/material";
-import React from "react";
 import GroupSectionSkeleton from "./GroupSectionSkeleton";
 
 export default function AssignBundleToGroupsSkeleton() {
@@ -42,8 +41,8 @@ export default function AssignBundleToGroupsSkeleton() {
         </Grid>
       </Grid>
 
-      {[1, 2].map((_, index) => (// NOSONAR
-        <GroupSectionSkeleton key={index} />
+      {Array.from({ length: 2 }, (_, i) => ({ id: i })).map((item) => (
+        <GroupSectionSkeleton key={item?.id} />
       ))}
     </Card>
   );

@@ -7,7 +7,7 @@ export const api = async (callback) => {
   let { data, error, status, count } = await callback();
 
   // If token expired or unauthorized
-  if (status === 401 || (error && error?.message?.includes("JWT expired"))) {
+  if (status === 401 || error?.message?.includes("JWT expired")) {
     // Try to refresh the session
     const { data: sessionData, error: refreshError } =
       await supabase.auth.refreshSession();

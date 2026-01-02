@@ -95,7 +95,7 @@ const HandlePromotions = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [data, setData] = useState(null);
-  const [loading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(false);
   const [nameUnique, setNameUnique] = useState({
@@ -114,8 +114,6 @@ const HandlePromotions = () => {
     reset,
     setValue,
     watch,
-    getValues,
-
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -133,11 +131,16 @@ const HandlePromotions = () => {
 
   useEffect(() => {
     if (id) {
-      setIsLoading(true);
+      setLoading(true);
       getPromotionById(id)
         .then((res) => {
-          if (!res?.error) {
+          if (res?.error) {
+            setData(null);
+            setError(true);
+            toast.error(res?.error);
+          } else {
             setData(res?.data);
+            setError(false);
             reset({
               name: res?.data?.name || "",
               code: res?.data?.code || "",
@@ -157,13 +160,10 @@ const HandlePromotions = () => {
             });
             checkNameUniqueness(res?.data?.name, id);
             checkCodeUniqueness(res?.data?.code, id);
-          } else {
-            setData(null);
-            toast.error(res?.error);
           }
         })
         .finally(() => {
-          setIsLoading(false);
+          setLoading(false);
         });
     }
   }, []);
@@ -187,11 +187,11 @@ const HandlePromotions = () => {
         ...(id && { id: id }),
       })
         .then((res) => {
-          if (!res?.error) {
+          if (res?.error) {
+            toast.error(res?.error || "An error occured");
+          } else {
             toast.success(`Promotion ${id ? "edited" : "added"} successfully`);
             navigate(-1);
-          } else {
-            toast.error(res?.error || "An error occured");
           }
         })
         .finally(() => {
@@ -301,7 +301,15 @@ const HandlePromotions = () => {
       pageSize,
       search,
     });
-    if (!res?.error) {
+    if (res?.error) {
+      return {
+        options: [...loadedOptions],
+        hasMore: false,
+        additional: {
+          page: page,
+        },
+      };
+    } else {
       return {
         options: res?.data?.map((item) => ({
           ...item,
@@ -313,14 +321,6 @@ const HandlePromotions = () => {
           page: page + 1,
         },
       };
-    } else {
-      return {
-        options: [...loadedOptions],
-        hasMore: false,
-        additional: {
-          page: page,
-        },
-      };
     }
   };
 
@@ -328,7 +328,15 @@ const HandlePromotions = () => {
     const pageSize = 10;
 
     const res = await getAllBundlesDropdown({ page, pageSize, search });
-    if (!res?.error) {
+    if (res?.error) {
+      return {
+        options: [...loadedOptions],
+        hasMore: false,
+        additional: {
+          page: page,
+        },
+      };
+    } else {
       return {
         options: res?.data?.map((item) => ({
           ...item,
@@ -340,16 +348,16 @@ const HandlePromotions = () => {
           page: page + 1,
         },
       };
-    } else {
-      return {
-        options: [...loadedOptions],
-        hasMore: false,
-        additional: {
-          page: page,
-        },
-      };
     }
   };
+
+  const IconCheck = useMemo(() => {
+    if (codeUnique?.check) {
+      <Check color="success" sx={{ cursor: "default" }} />;
+    } else {
+      <CloseIcon color="error" sx={{ cursor: "default" }} />;
+    }
+  }, [codeUnique?.check]);
 
   if (id && loading) {
     return <FormsSkeletons />;
@@ -447,10 +455,8 @@ const HandlePromotions = () => {
                             color="primary"
                             sx={{ cursor: "default" }}
                           />
-                        ) : codeUnique?.check ? (
-                          <Check color="success" sx={{ cursor: "default" }} />
                         ) : (
-                          <CloseIcon color="error" sx={{ cursor: "default" }} />
+                          IconCheck
                         )}
                       </Tooltip>
                     )
@@ -496,7 +502,7 @@ const HandlePromotions = () => {
                   debounceTimeout={300}
                   styles={asyncPaginateStyles}
                   menuPortalTarget={
-                    typeof window !== "undefined" ? document.body : null
+                    typeof window === "undefined" ? undefined : document.body
                   }
                   menuPosition="fixed"
                 />

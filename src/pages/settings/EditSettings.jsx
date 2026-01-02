@@ -217,7 +217,7 @@ const EditSettings = () => {
                   color="primary"
                   size="small"
                   onClick={() => append({ key: "", value: "" })}
-                  className={index !== fields?.length - 1 ? "invisible" : ""}
+                  className={index === fields?.length - 1 && "invisible"}
                 >
                   <AddIcon fontSize="small" />
                 </IconButton>

@@ -1,4 +1,3 @@
-import zIndex from "@mui/material/styles/zIndex";
 import { alpha } from "@mui/system";
 
 export const AsyncPaginateTheme = ({ theme }) => {

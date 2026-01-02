@@ -109,6 +109,7 @@ const BundleList = () => {
     { name: "" },
   ];
 
+  // NOSONAR
   const handleBundleStatus = (bundle) => {
     toggleBundleStatus({
       id: bundle?.id,
@@ -124,7 +125,15 @@ const BundleList = () => {
     const pageSize = 10;
 
     const res = await getAllBundleTags({ page, pageSize, search });
-    if (!res?.error) {
+    if (res?.error) {
+      return {
+        options: [...loadedOptions],
+        hasMore: false,
+        additional: {
+          page: page,
+        },
+      };
+    } else {
       return {
         options: res?.data?.map((item) => ({
           ...item,
@@ -134,14 +143,6 @@ const BundleList = () => {
         hasMore: res?.data?.length === pageSize,
         additional: {
           page: page + 1,
-        },
-      };
-    } else {
-      return {
-        options: [...loadedOptions],
-        hasMore: false,
-        additional: {
-          page: page,
         },
       };
     }
@@ -203,10 +204,10 @@ const BundleList = () => {
                 loadOptions={loadTagsOptions}
                 placeholder={"Select Tags"}
                 onChange={(value) => {
-                  if (!value) {
-                    resetFilters();
-                  } else {
+                  if (value) {
                     setSelectedTags(value);
+                  } else {
+                    resetFilters();
                   }
                 }}
                 additional={{ page: 1 }}

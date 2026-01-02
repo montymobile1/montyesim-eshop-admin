@@ -118,7 +118,15 @@ const PromoAnalysis = () => {
       pageSize,
       name: search,
     });
-    if (!res?.error) {
+    if (res?.error) {
+      return {
+        options: [...loadedOptions],
+        hasMore: false,
+        additional: {
+          page: page,
+        },
+      };
+    } else {
       return {
         options: res?.data?.map((item) => ({
           ...item,
@@ -128,14 +136,6 @@ const PromoAnalysis = () => {
         hasMore: res?.data?.length === pageSize,
         additional: {
           page: page + 1,
-        },
-      };
-    } else {
-      return {
-        options: [...loadedOptions],
-        hasMore: false,
-        additional: {
-          page: page,
         },
       };
     }
@@ -149,7 +149,15 @@ const PromoAnalysis = () => {
       pageSize,
       search,
     });
-    if (!res?.error) {
+    if (res?.error) {
+      return {
+        options: [...loadedOptions],
+        hasMore: false,
+        additional: {
+          page: page,
+        },
+      };
+    } else {
       return {
         options: res?.data?.map((item) => ({
           ...item,
@@ -159,14 +167,6 @@ const PromoAnalysis = () => {
         hasMore: res?.data?.length === pageSize,
         additional: {
           page: page + 1,
-        },
-      };
-    } else {
-      return {
-        options: [...loadedOptions],
-        hasMore: false,
-        additional: {
-          page: page,
         },
       };
     }
@@ -224,10 +224,10 @@ const PromoAnalysis = () => {
                 loadOptions={loadUsersOptions}
                 placeholder={"Select User"}
                 onChange={(value) => {
-                  if (!value) {
-                    resetFilters();
-                  } else {
+                  if (value) {
                     setSelectedUser(value);
+                  } else {
+                    resetFilters();
                   }
                 }}
                 additional={{ page: 1 }}
@@ -253,10 +253,10 @@ const PromoAnalysis = () => {
                 loadOptions={loadBundleOptions}
                 placeholder={"Select Bundles Code"}
                 onChange={(value) => {
-                  if (!value) {
-                    resetFilters();
-                  } else {
+                  if (value) {
                     setSelectedBundle(value);
+                  } else {
+                    resetFilters();
                   }
                 }}
                 additional={{ page: 1 }}

@@ -95,11 +95,11 @@ export default function VoucherPage() {
       id: voucher?.id,
       currentValue: voucher?.is_active,
     }).then((res) => {
-      if (!res?.error) {
+      if (res?.error) {
+        toast.error(res?.error || "Failed to change voucher status");
+      } else {
         getVouchers();
         toast.success("Voucher status updated successfully");
-      } else {
-        toast.error(res?.error || "Failed to change voucher status");
       }
     });
   };
@@ -108,11 +108,11 @@ export default function VoucherPage() {
     const voucher = openDelete?.data;
 
     DeleteVoucher(voucher?.id).then((res) => {
-      if (!res?.error) {
+      if (res?.error) {
+        toast.error(res?.error || "Failed to delete voucher");
+      } else {
         getVouchers();
         toast.success("Voucher deleted successfully");
-      } else {
-        toast.error(res?.error || "Failed to delete voucher");
       }
 
       setOpenDelete({ data: null, open: false });

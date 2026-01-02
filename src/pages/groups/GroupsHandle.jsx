@@ -119,7 +119,10 @@ const GroupsHandle = () => {
       setLoading(true);
       getGroupById(id)
         .then((res) => {
-          if (!res?.error) {
+          if (res?.error) {
+            setError(true);
+            toast.error(res?.error);
+          } else {
             setError(false);
             reset({
               name: res?.data?.name || "",
@@ -136,9 +139,6 @@ const GroupsHandle = () => {
                     })
                   : [{ name: "", icon: null, tag_id: null }],
             });
-          } else {
-            setError(true);
-            toast.error(res?.error);
           }
         })
         .finally(() => {
@@ -331,7 +331,10 @@ const GroupsHandle = () => {
             el,
             index // NOSONAR
           ) => (
-            <div className="flex flex-col gap-2 w-full sm:w-[70%]" key={index}>
+            <div
+              className="flex flex-col gap-2 w-full sm:w-[70%]"
+              key={`tags-${el?.id}-${el?.index}`}
+            >
               <div
                 className={clsx(
                   "flex flex-row gap-2 justify-between items-end",
@@ -339,7 +342,6 @@ const GroupsHandle = () => {
                     "!items-center": errors?.tags?.length > 0,
                   }
                 )}
-                key={`tags-${el?.id}-${el?.index}`}
               >
                 <div className="flex flex-col sm:flex-row gap-2 flex-1">
                   <div className="w-full sm:w-1/2 min-w-0">

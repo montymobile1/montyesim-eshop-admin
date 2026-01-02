@@ -1,28 +1,26 @@
-import React from "react";
 //COMPONENTS
-import ContactusPage from "../../pages/contact-us/ContactusPage";
-import OrdersPage from "../../pages/orders/OrdersPage";
-import DevicesPage from "../../pages/devices/DevicesPage";
-import UsersPage from "../../pages/users/UsersPage";
+import PageNotFound from "../../Components/shared/fallbacks/page-not-found/PageNotFound";
+import AssignBundleToGroups from "../../pages/AssignBundleToGroups/AssignBundleToGroups";
 import SignInPage from "../../pages/authentication/SignInPage";
 import BundlesList from "../../pages/bundles/BundlesList";
-import RouteWrapper from "./RouteWrapper";
-import PageNotFound from "../../Components/shared/fallbacks/page-not-found/PageNotFound";
-import TagList from "../../pages/tags/TagList";
-import GroupsList from "../../pages/groups/GroupsList";
-import UserDetail from "../../pages/users/UserDetail";
+import ContactusPage from "../../pages/contact-us/ContactusPage";
+import DevicesPage from "../../pages/devices/DevicesPage";
 import GroupsHandle from "../../pages/groups/GroupsHandle";
-import AssignBundleToGroups from "../../pages/AssignBundleToGroups/AssignBundleToGroups";
-import RulesList from "../../pages/rules/RulesList";
-import PromotionsList from "../../pages/promotions/PromotionsList";
+import GroupsList from "../../pages/groups/GroupsList";
+import OrdersPage from "../../pages/orders/OrdersPage";
 import HandlePromotions from "../../pages/promotions/HandlePromotions";
 import PromoAnalysis from "../../pages/promotions/PromoAnalysis";
-import VoucherPage from "../../pages/vouchers/VoucherPage";
-import Settings from "../../pages/settings/Settings";
-import EditSettings from "../../pages/settings/EditSettings";
+import PromotionsList from "../../pages/promotions/PromotionsList";
 import Referrals from "../../pages/referral/Referrals";
+import RulesList from "../../pages/rules/RulesList";
+import EditSettings from "../../pages/settings/EditSettings";
+import Settings from "../../pages/settings/Settings";
 import SettingsLogs from "../../pages/settings/SettingsLogs";
-import SettingsLogsDetail from "../../pages/settings/SettingsLogsDetail";
+import TagList from "../../pages/tags/TagList";
+import UserDetail from "../../pages/users/UserDetail";
+import UsersPage from "../../pages/users/UsersPage";
+import VoucherPage from "../../pages/vouchers/VoucherPage";
+import RouteWrapper from "./RouteWrapper";
 
 export const privateRoutes = [
   {

@@ -104,10 +104,18 @@ export default function Referrals() {
     }
   };
 
-  const loadFromOptions = async (search, loadedOptions, { page }) => {
+  const loadUserOptions = async (search, loadedOptions, { page }) => {
     const pageSize = 10;
     const res = await getAllUsersDropdown({ page, pageSize, name: search });
-    if (!res?.error) {
+    if (res?.error) {
+      return {
+        options: [...loadedOptions],
+        hasMore: false,
+        additional: {
+          page: page,
+        },
+      };
+    } else {
       return {
         options: res?.data?.map((item) => ({
           ...item,
@@ -117,40 +125,6 @@ export default function Referrals() {
         hasMore: res?.data?.length === pageSize,
         additional: {
           page: page + 1,
-        },
-      };
-    } else {
-      return {
-        options: [...loadedOptions],
-        hasMore: false,
-        additional: {
-          page: page,
-        },
-      };
-    }
-  };
-
-  const loadOptions = async (search, loadedOptions, { page }) => {
-    const pageSize = 10;
-    const res = await getAllUsersDropdown({ page, pageSize, name: search });
-    if (!res?.error) {
-      return {
-        options: res?.data?.map((item) => ({
-          ...item,
-          value: item.id,
-          label: item.email || item?.metadata?.email,
-        })),
-        hasMore: res?.data?.length === pageSize,
-        additional: {
-          page: page + 1,
-        },
-      };
-    } else {
-      return {
-        options: [...loadedOptions],
-        hasMore: false,
-        additional: {
-          page: page,
         },
       };
     }
@@ -235,7 +209,7 @@ export default function Referrals() {
                 isClearable={true}
                 value={selectedFromUser}
                 placeholder={"Select User Email"}
-                loadOptions={loadFromOptions}
+                loadOptions={loadUserOptions}
                 onChange={(value) => setSelectedFromUser(value)}
                 additional={{ page: 1 }}
                 isSearchable
@@ -257,7 +231,7 @@ export default function Referrals() {
                 isClearable={true}
                 value={selectedUser}
                 placeholder={"Select User Email"}
-                loadOptions={loadOptions}
+                loadOptions={loadUserOptions}
                 onChange={(value) => setSelectedUser(value)}
                 additional={{ page: 1 }}
                 isSearchable

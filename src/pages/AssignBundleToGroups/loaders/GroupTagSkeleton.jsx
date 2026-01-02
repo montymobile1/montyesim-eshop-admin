@@ -5,22 +5,17 @@ export default function GroupTagSkeleton() {
 
   return (
     <div className="flex flex-wrap gap-2">
-      {chipWidths.map(
-        (
-          width,
-          index // NOSONAR
-        ) => (
-          <Skeleton
-            key={index}
-            variant="rounded"
-            width={width}
-            height={32}
-            sx={{
-              borderRadius: "16px",
-            }}
-          />
-        )
-      )}
+      {chipWidths.map((width) => (
+        <Skeleton
+          key={width}
+          variant="rounded"
+          width={width}
+          height={32}
+          sx={{
+            borderRadius: "16px",
+          }}
+        />
+      ))}
     </div>
   );
 }

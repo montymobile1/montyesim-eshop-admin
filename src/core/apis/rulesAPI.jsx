@@ -180,7 +180,9 @@ export const editRule = async (payload) => {
       return query;
     });
 
-    if (!existing?.error) {
+    if (existing?.error) {
+      return existing;
+    } else {
       if (existing?.data?.length === 0) {
         const res = await api(() => {
           let query = supabase
@@ -197,8 +199,6 @@ export const editRule = async (payload) => {
           "A rule with the same action, event, and usage limit already exists."
         );
       }
-    } else {
-      return existing;
     }
   } catch (error) {
     throw error;

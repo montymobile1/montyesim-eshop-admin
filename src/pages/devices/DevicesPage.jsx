@@ -86,7 +86,15 @@ function DevicesPage() {
   const loadOptions = async (search, loadedOptions, { page }) => {
     const pageSize = 10;
     const res = await getAllUsersDropdown({ page, pageSize, name: search });
-    if (!res?.error) {
+    if (res?.error) {
+      return {
+        options: [...loadedOptions],
+        hasMore: false,
+        additional: {
+          page: page,
+        },
+      };
+    } else {
       return {
         options: res?.data?.map((item) => ({
           ...item,
@@ -96,14 +104,6 @@ function DevicesPage() {
         hasMore: res?.data?.length === pageSize,
         additional: {
           page: page + 1,
-        },
-      };
-    } else {
-      return {
-        options: [...loadedOptions],
-        hasMore: false,
-        additional: {
-          page: page,
         },
       };
     }
@@ -138,10 +138,10 @@ function DevicesPage() {
                 loadOptions={loadOptions}
                 placeholder={"Select User Email"}
                 onChange={(value) => {
-                  if (!value) {
-                    resetFilters();
-                  } else {
+                  if (value) {
                     setSelectedUser(value);
+                  } else {
+                    resetFilters();
                   }
                 }}
                 additional={{ page: 1 }}

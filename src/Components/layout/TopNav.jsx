@@ -7,7 +7,7 @@ import clsx from "clsx";
 import { useState } from "react";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { userSignout } from "../../core/apis/usersAPI";
 import { SignOut } from "../../Redux/reducers/AuthReducer";
@@ -19,7 +19,6 @@ export default function TopNav() {
   const { isAuthenticated } = useSelector((state) => state.authentication);
   const theme = useTheme();
   const dispatch = useDispatch();
-  const { pathname } = useLocation();
   const navigate = useNavigate();
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);

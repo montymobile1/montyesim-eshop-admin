@@ -168,7 +168,10 @@ export default function AssignBundleToGroups() {
     setLoading(true);
     getBundleTagsAndGroups(bundleId)
       .then((res) => {
-        if (!res?.error) {
+        if (res?.error) {
+          setDataError(true);
+          toast.error(res?.error);
+        } else {
           setBundleName(res?.bundleName);
           const tagsFromResponse = res?.data?.map((item) => item.tag?.id) ?? [];
           setSelectedTags(tagsFromResponse);
@@ -188,9 +191,6 @@ export default function AssignBundleToGroups() {
           setSelectedGroupes(alreadySelectedGroups);
           removeErrorKey("fetchTags");
           setDataError(false);
-        } else {
-          setDataError(true);
-          toast.error(res?.error);
         }
       })
       .finally(() => {

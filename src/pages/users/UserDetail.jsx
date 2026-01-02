@@ -4,8 +4,6 @@ import { useState } from "react";
 import DevicesTab from "./tabs/DevicesTab";
 import WalletTransactionsTab from "./tabs/WalletTransactionsTab";
 
-import { useParams } from "react-router-dom";
-
 const UserDetail = () => {
   const [selectedTab, setSelectedTab] = useState("1");
 
