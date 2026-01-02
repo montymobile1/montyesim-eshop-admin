@@ -29,7 +29,7 @@ const EditSettings = () => {
 
   const [deletedItems, setDeletedItems] = useState([]);
   const [data, setData] = useState(null);
-  const [loading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const {
@@ -51,21 +51,21 @@ const EditSettings = () => {
   });
 
   useEffect(() => {
-    setIsLoading(true);
+    setLoading(true);
     getAllSettings()
       .then((res) => {
-        if (!res?.error) {
+        if (res?.error) {
+          setData(null);
+          toast.error(res?.error);
+        } else {
           setData(res?.data);
 
           reset({ settings: res.data });
           setDeletedItems([]);
-        } else {
-          setData(null);
-          toast.error(res?.error);
         }
       })
       .finally(() => {
-        setIsLoading(false);
+        setLoading(false);
       });
   }, [reset]);
 
@@ -82,11 +82,11 @@ const EditSettings = () => {
 
     updateSettings(settingsPayload, data, deletedItems, user, isDirty)
       .then((res) => {
-        if (!res?.error) {
+        if (res?.error) {
+          toast.error(res?.error || "An error occured");
+        } else {
           toast.success(`Settings edited successfully`);
           navigate(-1);
-        } else {
-          toast.error(res?.error || "An error occured");
         }
       })
       .finally(() => {

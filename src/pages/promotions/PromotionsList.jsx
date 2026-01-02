@@ -125,11 +125,11 @@ const PromotionsList = () => {
       id: promotion?.id,
       currentValue: promotion?.is_active,
     }).then((res) => {
-      if (!res?.error) {
+      if (res?.error) {
+        toast.error(res?.error || "Failed to change promotion status");
+      } else {
         getPromotions();
         toast.success("Promotion status updated successfully");
-      } else {
-        toast.error(res?.error || "Failed to change promotion status");
       }
     });
   };
@@ -142,7 +142,15 @@ const PromotionsList = () => {
       pageSize,
       search,
     });
-    if (!res?.error) {
+    if (res?.error) {
+      return {
+        options: [...loadedOptions],
+        hasMore: false,
+        additional: {
+          page: page,
+        },
+      };
+    } else {
       return {
         options: res?.data?.map((item) => ({
           ...item,
@@ -152,14 +160,6 @@ const PromotionsList = () => {
         hasMore: res?.data?.length === pageSize,
         additional: {
           page: page + 1,
-        },
-      };
-    } else {
-      return {
-        options: [...loadedOptions],
-        hasMore: false,
-        additional: {
-          page: page,
         },
       };
     }
@@ -272,10 +272,10 @@ const PromotionsList = () => {
                 loadOptions={loadRuleOptions}
                 placeholder={"Select Rules"}
                 onChange={(value) => {
-                  if (!value) {
-                    resetFilters();
-                  } else {
+                  if (value) {
                     setSelectedRule(value);
+                  } else {
+                    resetFilters();
                   }
                 }}
                 additional={{ page: 1 }}
@@ -301,10 +301,10 @@ const PromotionsList = () => {
                 loadOptions={loadBundleOptions}
                 placeholder={"Select Bundles"}
                 onChange={(value) => {
-                  if (!value) {
-                    resetFilters();
-                  } else {
+                  if (value) {
                     setSelectedBundle(value);
+                  } else {
+                    resetFilters();
                   }
                 }}
                 additional={{ page: 1 }}

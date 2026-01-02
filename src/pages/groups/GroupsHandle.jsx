@@ -133,11 +133,11 @@ const GroupsHandle = () => {
                   (el) => el?.id === res?.data?.group_category
                 ) || null,
               tags:
-                res?.data?.tag?.length !== 0
-                  ? res?.data?.tag?.map((el) => {
+                res?.data?.tag?.length === 0
+                  ? [{ name: "", icon: null, tag_id: null }]
+                  : res?.data?.tag?.map((el) => {
                       return { ...el, tag_id: el?.id };
-                    })
-                  : [{ name: "", icon: null, tag_id: null }],
+                    }),
             });
           }
         })

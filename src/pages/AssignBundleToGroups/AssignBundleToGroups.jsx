@@ -102,7 +102,16 @@ export default function AssignBundleToGroups() {
   const loadGroupOptions = async (search, loadedOptions, { page }) => {
     const pageSize = 10;
     const res = await getAllGroups(page, pageSize, search, true);
-    if (!res?.error) {
+    if (res?.error) {
+      setErrors((prev) => ({ ...prev, loadGroupOptions: res?.error }));
+      return {
+        options: [...loadedOptions],
+        hasMore: false,
+        additional: {
+          page: page,
+        },
+      };
+    } else {
       removeErrorKey("loadGroupOptions");
       return {
         options: res?.data?.map((item) => ({
@@ -113,15 +122,6 @@ export default function AssignBundleToGroups() {
         hasMore: res?.data?.length === pageSize,
         additional: {
           page: page + 1,
-        },
-      };
-    } else {
-      setErrors((prev) => ({ ...prev, loadGroupOptions: res?.error }));
-      return {
-        options: [...loadedOptions],
-        hasMore: false,
-        additional: {
-          page: page,
         },
       };
     }

@@ -109,8 +109,8 @@ const BundleList = () => {
     { name: "" },
   ];
 
-  // NOSONAR
   const handleBundleStatus = (bundle) => {
+    // NOSONAR
     toggleBundleStatus({
       id: bundle?.id,
       currentValue: bundle?.is_active,

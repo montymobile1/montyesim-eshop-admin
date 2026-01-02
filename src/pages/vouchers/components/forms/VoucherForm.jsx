@@ -1,5 +1,5 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as yup from "yup";
 import {
@@ -118,6 +118,13 @@ export default function VoucherForm({ voucher = null, onSuccess, OnCancel }) {
         });
     }
   };
+  const IconCheck = useMemo(() => {
+    if (codeUnique?.check) {
+      return <Check color="success" sx={{ cursor: "default" }} />;
+    } else {
+      return <CloseIcon color="error" sx={{ cursor: "default" }} />;
+    }
+  }, [codeUnique?.check]);
 
   const OnClose = () => {
     OnCancel?.();
@@ -159,10 +166,8 @@ export default function VoucherForm({ voucher = null, onSuccess, OnCancel }) {
                         color="primary"
                         sx={{ cursor: "default" }}
                       />
-                    ) : codeUnique?.check ? (
-                      <Check color="success" sx={{ cursor: "default" }} />
                     ) : (
-                      <CloseIcon color="error" sx={{ cursor: "default" }} />
+                      IconCheck
                     )}
                   </Tooltip>
                 )

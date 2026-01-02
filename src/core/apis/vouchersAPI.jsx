@@ -53,70 +53,36 @@ export const getAllVouchers = async ({ page, pageSize, search }) => {
 };
 
 export const checkVoucherCodeUnique = async (payload, id) => {
-  try {
-    const res = await api(() => {
-      let query = supabase
-        .from("voucher")
-        .select("id")
-        .eq("code", payload)
-        .limit(1);
-      if (id) {
-        query = query.neq("id", id);
-      }
-      return query;
-    });
+  return api(() => {
+    let query = supabase
+      .from("voucher")
+      .select("id")
+      .eq("code", payload)
+      .limit(1);
 
-    return res;
-  } catch (error) {
-    throw error;
-  }
+    if (id) {
+      query = query.neq("id", id);
+    }
+
+    return query;
+  });
 };
 
 export const toggleVoucherStatus = async ({ id, currentValue }) => {
-  try {
-    const res = await api(() => {
-      let query = supabase
-        .from("voucher")
-        .update({ is_active: !currentValue })
-        .eq("id", id)
-        .select();
-
-      return query;
-    });
-    return res;
-  } catch (error) {
-    throw error;
-  }
+  return api(() =>
+    supabase
+      .from("voucher")
+      .update({ is_active: !currentValue })
+      .eq("id", id)
+      .select()
+  );
 };
 
 export const DeleteVoucher = async (voucherId) => {
-  try {
-    const res = await api(() => {
-      let query = supabase.from("voucher").delete().eq("id", voucherId);
-
-      return query;
-    });
-
-    return res;
-  } catch (error) {
-    throw error;
-  }
+  return api(() => supabase.from("voucher").delete().eq("id", voucherId));
 };
-
 export const addVoucher = async ({ code, amount, expired_at }) => {
-  try {
-    const res = await api(() => {
-      return supabase.from("voucher").insert([
-        {
-          code,
-          amount,
-          expired_at,
-        },
-      ]);
-    });
-
-    return res;
-  } catch (error) {
-    throw error;
-  }
+  return api(() =>
+    supabase.from("voucher").insert([{ code, amount, expired_at }])
+  );
 };

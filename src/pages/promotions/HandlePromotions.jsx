@@ -152,11 +152,11 @@ const HandlePromotions = () => {
               amount: res?.data?.amount || null,
               duration: [res?.data?.valid_from, res?.data?.valid_to],
               bundle_code:
-                res?.data?.bundle_code !== ""
-                  ? res?.data?.bundle_code?.split(",")?.map((el) => {
+                res?.data?.bundle_code === ""
+                  ? []
+                  : res?.data?.bundle_code?.split(",")?.map((el) => {
                       return { value: el, label: el };
-                    })
-                  : [],
+                    }),
             });
             checkNameUniqueness(res?.data?.name, id);
             checkCodeUniqueness(res?.data?.code, id);
@@ -229,9 +229,9 @@ const HandlePromotions = () => {
         setNameUnique({
           check: res?.status == 200 && res?.data?.length === 0,
           message:
-            res?.data?.length !== 0
-              ? "Name is not unique"
-              : res?.error || "Name is unique",
+            res?.data?.length === 0
+              ? res?.error || "Name is unique"
+              : "Name is not unique",
           loading: false,
         });
       });
@@ -254,9 +254,9 @@ const HandlePromotions = () => {
         setCodeUnique({
           check: res?.status == 200 && res?.data?.length === 0,
           message:
-            res?.data?.length !== 0
-              ? "Code is not unique"
-              : res?.error || "Code is unique",
+            res?.data?.length === 0
+              ? res?.error || "Code is unique"
+              : "Code is not unique",
           loading: false,
         });
       });
@@ -351,14 +351,20 @@ const HandlePromotions = () => {
     }
   };
 
-  const IconCheck = useMemo(() => {
+  const CodeIconCheck = useMemo(() => {
     if (codeUnique?.check) {
-      <Check color="success" sx={{ cursor: "default" }} />;
+      return <Check color="success" sx={{ cursor: "default" }} />;
     } else {
-      <CloseIcon color="error" sx={{ cursor: "default" }} />;
+      return <CloseIcon color="error" sx={{ cursor: "default" }} />;
     }
   }, [codeUnique?.check]);
-
+  const NameIconCheck = useMemo(() => {
+    if (nameUnique?.check) {
+      return <Check color="success" sx={{ cursor: "default" }} />;
+    } else {
+      return <CloseIcon color="error" sx={{ cursor: "default" }} />;
+    }
+  }, [nameUnique?.check]);
   if (id && loading) {
     return <FormsSkeletons />;
   }
@@ -416,10 +422,8 @@ const HandlePromotions = () => {
                             color="primary"
                             sx={{ cursor: "default" }}
                           />
-                        ) : nameUnique?.check ? (
-                          <Check color="success" sx={{ cursor: "default" }} />
                         ) : (
-                          <CloseIcon color="error" sx={{ cursor: "default" }} />
+                          NameIconCheck
                         )}
                       </Tooltip>
                     )
@@ -456,7 +460,7 @@ const HandlePromotions = () => {
                             sx={{ cursor: "default" }}
                           />
                         ) : (
-                          IconCheck
+                          CodeIconCheck
                         )}
                       </Tooltip>
                     )
@@ -600,7 +604,7 @@ const HandlePromotions = () => {
                   isSearchable
                   debounceTimeout={300}
                   menuPortalTarget={
-                    typeof window !== "undefined" ? document.body : null
+                    typeof window === "undefined" ? undefined : document.body
                   }
                   menuPosition="fixed"
                   styles={asyncPaginateStyles}

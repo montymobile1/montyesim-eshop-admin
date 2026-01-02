@@ -114,7 +114,9 @@ export const AddRule = async (payload) => {
       return query;
     });
 
-    if (!existing?.error) {
+    if (existing?.error) {
+      return existing;
+    } else {
       if (existing?.data?.length === 0) {
         const res = await api(() => {
           let query = supabase.from("promotion_rule").insert([payload]);
@@ -128,8 +130,6 @@ export const AddRule = async (payload) => {
           "A rule with the same action, event, and usage limit already exists."
         );
       }
-    } else {
-      return existing;
     }
   } catch (error) {
     throw error;
@@ -164,7 +164,7 @@ export const deleteRule = async (ruleId) => {
 
 export const editRule = async (payload) => {
   try {
-    const { id, ...payloadWithoutId } = payload;
+    const { id, ...payloadWithoutId } = payload; // NOSONAR
     const matchyItem = {
       promotion_rule_action_id: payload?.promotion_rule_action_id,
       promotion_rule_event_id: payload?.promotion_rule_event_id,
