@@ -12,7 +12,9 @@
     "build:dev": "vite build --mode dev --outDir build",
     "build:qa": "vite build --mode qa --outDir build",
     "preview:dev": "vite preview --outDir build --mode dev",
-    "preview:qa": "vite preview --outDir build --mode qa"
+    "preview:qa": "vite preview --outDir build --mode qa",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@date-io/date-fns": "^3.2.0",
