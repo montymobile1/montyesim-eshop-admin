@@ -3,11 +3,13 @@ import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 //COMPONENT
-import { Card, TableCell, TablePagination } from "@mui/material";
+import { Card, TableCell } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import RowComponent from "../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../Components/shared/table-component/TableComponent";
+import TablePaginationComponent from "../../Components/shared/table-component/TablePaginationComponent";
 import { getAllSettings } from "../../core/apis/settingsAPI";
+import { handleTableResponse } from "../../core/helpers/utilFunctions";
 
 function Settings() {
   const navigate = useNavigate();
@@ -26,18 +28,7 @@ function Settings() {
 
     getAllSettings({ ...searchQueries })
       .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-          setData([]);
-          setTotalRows(0);
-        } else {
-          setTotalRows(res?.count || 0);
-          setData(
-            res?.data?.map((el) => ({
-              ...el,
-            }))
-          );
-        }
+        handleTableResponse(res, setData, setTotalRows, setLoading);
       })
       .catch(() => {
         toast.error("Failed to load settings");
@@ -59,6 +50,11 @@ function Settings() {
     { name: "Created At" },
   ];
 
+  const tableCellStyles = {
+    sx: { minWidth: "200px" },
+    className: "max-w-[250px] truncate",
+  };
+
   return (
     <Card className="page-card">
       <TableComponent
@@ -73,23 +69,14 @@ function Settings() {
       >
         {data?.map((el) => (
           <RowComponent key={el?.id} actions={true}>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.key || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.value || "N/A"}
             </TableCell>
 
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.created_at
                 ? dayjs(el?.created_at).format("DD-MM-YYYY HH:mm")
                 : "N/A"}
@@ -97,14 +84,13 @@ function Settings() {
           </RowComponent>
         ))}
       </TableComponent>
-      <TablePagination
-        component="div"
-        count={totalRows || 0}
+      <TablePaginationComponent
+        totalRows={totalRows}
         page={searchQueries?.page}
+        pageSize={searchQueries?.pageSize}
         onPageChange={(e, newPage) => {
           setSearchQueries({ ...searchQueries, page: newPage });
         }}
-        rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
           setSearchQueries({
             ...searchQueries,

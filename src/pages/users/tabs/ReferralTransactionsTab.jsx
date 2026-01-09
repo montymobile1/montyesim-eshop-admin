@@ -30,6 +30,29 @@ export default function ReferralTransactionsTab() {
     { name: "Purchased Date" },
   ];
 
+  const tableCellStyles140 = {
+    sx: { minWidth: 140 },
+    className: "max-w-[220px] truncate",
+  };
+
+  const tableCellStyles140NoTruncate = {
+    sx: { minWidth: 140 },
+  };
+
+  const tableCellStyles220 = {
+    sx: { minWidth: 220 },
+    className: "max-w-[260px] truncate",
+  };
+
+  const tableCellStyles160 = {
+    sx: { minWidth: 160 },
+    className: "max-w-[220px] truncate",
+  };
+
+  const tableCellStyles180 = {
+    sx: { minWidth: 180 },
+  };
+
   const getReferralTransactions = async () => {
     setLoading(true);
     try {
@@ -68,13 +91,10 @@ export default function ReferralTransactionsTab() {
       >
         {data?.map((el, idx) => (
           <RowComponent key={el?.id || idx} actions={false}>
-            <TableCell
-              sx={{ minWidth: 140 }}
-              className="max-w-[220px] truncate"
-            >
+            <TableCell {...tableCellStyles140}>
               {el?.referral_code || "N/A"}
             </TableCell>
-            <TableCell sx={{ minWidth: 140 }}>
+            <TableCell {...tableCellStyles140NoTruncate}>
               {el?.currency}{" "}
               <CountUp
                 start={0}
@@ -85,31 +105,22 @@ export default function ReferralTransactionsTab() {
               />
             </TableCell>
 
-            <TableCell
-              sx={{ minWidth: 220 }}
-              className="max-w-[260px] truncate"
-            >
+            <TableCell {...tableCellStyles220}>
               {el?.from_user_email || "N/A"}
             </TableCell>
 
-            <TableCell
-              sx={{ minWidth: 220 }}
-              className="max-w-[260px] truncate"
-            >
+            <TableCell {...tableCellStyles220}>
               {el?.to_user_email || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: 160 }}
-              className="max-w-[220px] truncate"
-            >
+            <TableCell {...tableCellStyles160}>
               {el?.id || el?.transaction_id || "N/A"}
             </TableCell>
-            <TableCell sx={{ minWidth: 180 }}>
+            <TableCell {...tableCellStyles180}>
               {el?.created_at
                 ? dayjs(el?.created_at).format("DD-MM-YYYY HH:mm")
                 : "N/A"}
             </TableCell>
-            <TableCell sx={{ minWidth: 180 }}>
+            <TableCell {...tableCellStyles180}>
               {el?.payment_time
                 ? dayjs(el.payment_time).format("DD-MM-YYYY HH:mm")
                 : "N/A"}

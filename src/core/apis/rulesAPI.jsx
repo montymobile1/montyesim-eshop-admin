@@ -164,7 +164,7 @@ export const deleteRule = async (ruleId) => {
 
 export const editRule = async (payload) => {
   try {
-    const { id, ...payloadWithoutId } = payload; // NOSONAR
+    const { id, ...payloadWithoutId } = payload;
     const matchyItem = {
       promotion_rule_action_id: payload?.promotion_rule_action_id,
       promotion_rule_event_id: payload?.promotion_rule_event_id,

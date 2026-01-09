@@ -3,20 +3,16 @@ import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 //COMPONENT
 import SearchIcon from "@mui/icons-material/Search";
-import {
-  Card,
-  FormControl,
-  TableCell,
-  TablePagination,
-  TextField,
-} from "@mui/material";
+import { Card, FormControl, TableCell, TextField } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { toast } from "react-toastify";
 import Filters from "../../Components/Filters/Filters";
 import ContactUsDetail from "../../Components/page-component/contact-us/ContactUsDetail";
 import RowComponent from "../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../Components/shared/table-component/TableComponent";
+import TablePaginationComponent from "../../Components/shared/table-component/TablePaginationComponent";
 import { getAllMessages } from "../../core/apis/contactusAPI";
+import { handleTableResponse } from "../../core/helpers/utilFunctions";
 
 function ContactusPage() {
   const [loading, setLoading] = useState(null);
@@ -36,6 +32,11 @@ function ContactusPage() {
     { name: "Created At" },
   ];
 
+  const tableCellStyles = {
+    sx: { minWidth: "200px" },
+    className: "max-w-[250px] truncate",
+  };
+
   const getContactus = async () => {
     setLoading(true);
 
@@ -46,22 +47,9 @@ function ContactusPage() {
       name,
     })
       .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-
-          setData([]);
-          setTotalRows(0);
-        } else {
-          setTotalRows(res?.count || 0);
-          setData(
-            res?.data?.map((el) => ({
-              ...el,
-            }))
-          );
-        }
+        handleTableResponse(res, setData, setTotalRows, setLoading);
       })
       .catch((e) => {
-        console.error("Failed to load messages:", e);
         toast.error("Failed to load messages");
       })
       .finally(() => {
@@ -139,22 +127,9 @@ function ContactusPage() {
               })
             }
           >
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
-              {el?.email || "N/A"}
-            </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
-              {el?.content || "N/A"}
-            </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>{el?.email || "N/A"}</TableCell>
+            <TableCell {...tableCellStyles}>{el?.content || "N/A"}</TableCell>
+            <TableCell {...tableCellStyles}>
               {el?.created_at
                 ? dayjs(el?.created_at).format("DD-MM-YYYY HH:mm")
                 : "N/A"}
@@ -162,14 +137,13 @@ function ContactusPage() {
           </RowComponent>
         ))}
       </TableComponent>
-      <TablePagination
-        component="div"
-        count={totalRows || 0}
+      <TablePaginationComponent
+        totalRows={totalRows}
         page={searchQueries?.page}
+        pageSize={searchQueries?.pageSize}
         onPageChange={(e, newPage) => {
           setSearchQueries({ ...searchQueries, page: newPage });
         }}
-        rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
           setSearchQueries({
             ...searchQueries,

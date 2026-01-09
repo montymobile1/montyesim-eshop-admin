@@ -5,20 +5,16 @@ import CountUp from "react-countup";
 import { AsyncPaginate } from "react-select-async-paginate";
 import { toast } from "react-toastify";
 //COMPONENT
-import {
-  Card,
-  FormControl,
-  TableCell,
-  TablePagination,
-  useTheme,
-} from "@mui/material";
+import { Card, FormControl, TableCell, useTheme } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import Filters from "../../Components/Filters/Filters";
 import RowComponent from "../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../Components/shared/table-component/TableComponent";
+import TablePaginationComponent from "../../Components/shared/table-component/TablePaginationComponent";
 import TagComponent from "../../Components/shared/tag-component/TagComponent";
 import { getAllOrders } from "../../core/apis/ordersAPI";
 import { getAllUsersDropdown } from "../../core/apis/usersAPI";
+import { handleTableResponse } from "../../core/helpers/utilFunctions";
 
 function OrdersPage() {
   const theme = useTheme();
@@ -71,21 +67,9 @@ function OrdersPage() {
       user,
     })
       .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-          setData([]);
-          setTotalRows(0);
-        } else {
-          setTotalRows(res?.count || 0);
-          setData(
-            res?.data?.map((el) => ({
-              ...el,
-            }))
-          );
-        }
+        handleTableResponse(res, setData, setTotalRows, setLoading);
       })
-      .catch((e) => {
-        console.error("Failed to load devices:", e);
+      .catch(() => {
         toast.error("Failed to load devices");
       })
       .finally(() => {
@@ -124,6 +108,11 @@ function OrdersPage() {
 
     { name: "Created At" },
   ];
+
+  const tableCellStyles = {
+    sx: { minWidth: "200px" },
+    className: "max-w-[250px] truncate",
+  };
 
   return (
     <Card className="page-card">
@@ -167,36 +156,19 @@ function OrdersPage() {
       >
         {data?.map((el) => (
           <RowComponent key={el?.id} actions={true}>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
-              {el?.id || "N/A"}
-            </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>{el?.id || "N/A"}</TableCell>
+            <TableCell {...tableCellStyles}>
               {el?.user?.metadata?.email || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.user?.metadata?.msisdn || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.bundle_data && el?.bundle_data !== "-"
                 ? JSON.parse(el?.bundle_data)?.display_title
                 : "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.currency}{" "}
               <CountUp
                 start={0}
@@ -206,40 +178,22 @@ function OrdersPage() {
                 decimals={2}
               />
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.promo_code || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.referral_code || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.order_type || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               <TagComponent value={el?.order_status} />
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               <TagComponent value={el?.payment_status} />
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.created_at
                 ? dayjs(el?.created_at).format("DD-MM-YYYY HH:mm")
                 : "N/A"}
@@ -247,14 +201,13 @@ function OrdersPage() {
           </RowComponent>
         ))}
       </TableComponent>
-      <TablePagination
-        component="div"
-        count={totalRows || 0}
+      <TablePaginationComponent
+        totalRows={totalRows}
         page={searchQueries?.page}
+        pageSize={searchQueries?.pageSize}
         onPageChange={(e, newPage) => {
           setSearchQueries({ ...searchQueries, page: newPage });
         }}
-        rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
           setSearchQueries({
             ...searchQueries,

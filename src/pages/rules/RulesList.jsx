@@ -1,27 +1,22 @@
 import SearchIcon from "@mui/icons-material/Search";
-import {
-  Card,
-  FormControl,
-  Grid2,
-  TableCell,
-  TablePagination,
-  TextField,
-} from "@mui/material";
+import { Card, FormControl, Grid2, TableCell, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import Filters from "../../Components/Filters/Filters";
+import MuiModal from "../../Components/Modals/MuiModal";
+import { FormDropdownList } from "../../Components/form-component/FormComponent";
+import RuleHandle from "../../Components/page-component/rules/RuleHandle";
 import RowComponent from "../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../Components/shared/table-component/TableComponent";
-import RuleHandle from "../../Components/page-component/rules/RuleHandle";
+import TablePaginationComponent from "../../Components/shared/table-component/TablePaginationComponent";
 import {
   deleteRule,
   getAllActions,
   getAllEvents,
   getAllRules,
 } from "../../core/apis/rulesAPI";
+import { handleTableResponse } from "../../core/helpers/utilFunctions";
 import { beneficiaryData } from "../../core/vairables/EnumData";
-import MuiModal from "../../Components/Modals/MuiModal";
-import { FormDropdownList } from "../../Components/form-component/FormComponent";
 
 function RulesList() {
   const [loading, setLoading] = useState(null);
@@ -56,20 +51,10 @@ function RulesList() {
       event: event?.id || null,
     })
       .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-          setLoading(false);
-          setData([]);
-          setTotalRows(0);
-        } else {
-          setTotalRows(res?.count || 0);
-          setData(
-            res?.data?.map((el) => ({
-              ...el,
-              ...el?.metadata,
-            }))
-          );
-        }
+        handleTableResponse(res, setData, setTotalRows, setLoading, (el) => ({
+          ...el,
+          ...el?.metadata,
+        }));
       })
       .catch((e) => {
         toast.error(e?.message || "Fail to display data");
@@ -125,6 +110,11 @@ function RulesList() {
     { name: "Max usage" },
     { name: "Beneficiary" },
   ];
+
+  const tableCellStyles = {
+    sx: { minWidth: "200px" },
+    className: "max-w-[250px] truncate",
+  };
 
   const resetFilters = () => {
     setSearchQueries({ ...searchQueries, name: "", event: null, action: null });
@@ -232,30 +222,14 @@ function RulesList() {
               setOpenDelete({ data: el?.id, open: true });
             }}
           >
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
-              {el?.id || "N/A"}
-            </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>{el?.id || "N/A"}</TableCell>
+            <TableCell {...tableCellStyles}>
               {el?.promotion_rule_action?.name || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.promotion_rule_event?.name || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
-              {el?.max_usage || "N/A"}
-            </TableCell>
+            <TableCell {...tableCellStyles}>{el?.max_usage || "N/A"}</TableCell>
             <TableCell>
               {beneficiaryData?.find((bf) => bf?.id == el?.beneficiary)
                 ?.title || "N/A"}
@@ -263,14 +237,13 @@ function RulesList() {
           </RowComponent>
         ))}
       </TableComponent>
-      <TablePagination
-        component="div"
-        count={totalRows || 0}
+      <TablePaginationComponent
+        totalRows={totalRows}
         page={searchQueries?.page}
+        pageSize={searchQueries?.pageSize}
         onPageChange={(e, newPage) => {
           setSearchQueries({ ...searchQueries, page: newPage });
         }}
-        rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
           setSearchQueries({ ...searchQueries, pageSize: e.target.value });
         }}

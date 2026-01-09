@@ -90,6 +90,16 @@ export default function VoucherPage() {
     { name: "Is Active" },
   ];
 
+  const tableCellStylesSmall = {
+    sx: { minWidth: "150px" },
+    className: "max-w-[200px] truncate",
+  };
+
+  const tableCellStyles = {
+    sx: { minWidth: "200px" },
+    className: "max-w-[250px] truncate",
+  };
+
   const handleVoucherStatus = (voucher) => {
     toggleVoucherStatus({
       id: voucher?.id,
@@ -180,16 +190,10 @@ export default function VoucherPage() {
             actions={true}
             onDelete={() => handleOpenDeleteModal(el)}
           >
-            <TableCell
-              sx={{ minWidth: "150px" }}
-              className={"max-w-[200px] truncate"}
-            >
+            <TableCell {...tableCellStylesSmall}>
               {el?.code || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "150px" }}
-              className={"max-w-[200px] truncate"}
-            >
+            <TableCell {...tableCellStylesSmall}>
               {DefaultCurrency}{" "}
               <CountUp
                 start={0}
@@ -199,24 +203,15 @@ export default function VoucherPage() {
                 decimals={2}
               />
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "150px" }}
-              className={"max-w-[200px] truncate"}
-            >
+            <TableCell {...tableCellStylesSmall}>
               {el?.user?.email || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.expired_at
                 ? dayjs(el?.expired_at).format("DD-MM-YYYY")
                 : "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.created_at
                 ? dayjs(el?.created_at).format("DD-MM-YYYY HH:mm")
                 : "N/A"}

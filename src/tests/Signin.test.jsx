@@ -7,17 +7,6 @@ import { store } from "../Redux/store";
 import SignInPage from "../pages/authentication/SignInPage";
 
 describe("SignInPage", () => {
-  it("loads without crashing", () => {
-    const { container } = render(
-      <MemoryRouter>
-        <Provider store={store}>
-          <SignInPage />
-        </Provider>
-      </MemoryRouter>
-    );
-    expect(container).toBeTruthy();
-  });
-
   it("renders the login form", () => {
     render(
       <MemoryRouter>

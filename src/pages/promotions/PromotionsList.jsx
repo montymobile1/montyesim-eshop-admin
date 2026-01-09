@@ -120,6 +120,11 @@ const PromotionsList = () => {
     { name: "Status" },
   ];
 
+  const tableCellStyles = {
+    sx: { minWidth: "200px" },
+    className: "max-w-[250px] truncate",
+  };
+
   const handlePromotionStatus = (promotion) => {
     togglePromotionStatus({
       id: promotion?.id,
@@ -336,52 +341,31 @@ const PromotionsList = () => {
             onDelete={() => setOpenDelete({ data: el, open: true })}
             onView={() => setOpenDetail({ data: el?.id, open: true })}
           >
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.name || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.code || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {`${el?.promotion_rule?.name}`}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.amount
                 ? `${el?.amount} ${displayUnit(
                     el?.promotion_rule?.promotion_rule_action?.name
                   )}`
                 : "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.valid_from
                 ? dayjs(el?.valid_from).format("DD-MM-YYYY")
                 : "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.valid_to ? dayjs(el?.valid_to).format("DD-MM-YYYY") : "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.bundle_code || "All"}
             </TableCell>
             <TableCell sx={{ minWidth: "100px" }}>

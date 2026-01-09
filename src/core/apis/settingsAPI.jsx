@@ -77,7 +77,6 @@ export const updateSettings = async (
           .from("app_config")
           .update({ value: newUuid })
           .eq("key", "APP_CACHE_KEY");
-        return query;
       }
     }
 
@@ -90,7 +89,7 @@ export const updateSettings = async (
 export const getAllSettingsLogs = async ({ page, pageSize }) => {
   const from = page * pageSize;
   const to = from + pageSize - 1;
-
+  console.log(from, to, "checking from to ");
   try {
     // Step 1: Fetch orders
     const dataRes = await api(() => {

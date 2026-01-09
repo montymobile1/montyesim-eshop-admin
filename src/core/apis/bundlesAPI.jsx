@@ -61,7 +61,6 @@ export const toggleBundleStatus = async ({ id, currentValue }) => {
         .from("app_config")
         .update({ value: newUuid })
         .eq("key", "APP_CACHE_KEY");
-      return query;
     }
 
     return res;
@@ -81,7 +80,7 @@ export const updateBundleTitle = async (payload) => {
       return query;
     });
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("app_config")
       .select("value")
       .eq("key", "APP_CACHE_KEY")
@@ -93,7 +92,6 @@ export const updateBundleTitle = async (payload) => {
         .from("app_config")
         .update({ value: newUuid })
         .eq("key", "APP_CACHE_KEY");
-      return query;
     }
 
     return res;
@@ -199,7 +197,6 @@ export const assignTagsToBundle = async (bundleId, tagIds) => {
       .from("app_config")
       .update({ value: newUuid })
       .eq("key", "APP_CACHE_KEY");
-    return query;
   }
 
   return { error: deleteRes?.error || upsertRes?.error };

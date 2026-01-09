@@ -1,12 +1,14 @@
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import { Card, IconButton, TableCell, TablePagination } from "@mui/material";
+import { Card, IconButton, TableCell } from "@mui/material";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import RowComponent from "../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../Components/shared/table-component/TableComponent";
+import TablePaginationComponent from "../../Components/shared/table-component/TablePaginationComponent";
 import { getAllSettingsLogs } from "../../core/apis/settingsAPI";
 import SettingsLogsDetail from "./SettingsLogsDetail";
+import { handleTableResponse } from "../../core/helpers/utilFunctions";
 
 const SettingsLogs = () => {
   const [loading, setLoading] = useState(false);
@@ -20,6 +22,11 @@ const SettingsLogs = () => {
 
   const tableHeaders = [{ name: "User" }, { name: "Updated At" }];
 
+  const tableCellStyles = {
+    sx: { minWidth: "200px" },
+    className: "max-w-[250px] truncate",
+  };
+
   const getLogs = async () => {
     setLoading(true);
 
@@ -29,18 +36,7 @@ const SettingsLogs = () => {
       pageSize,
     })
       .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-          setData([]);
-          setTotalRows(0);
-        } else {
-          setTotalRows(res?.count || 0);
-          setData(
-            res?.data?.map((el) => ({
-              ...el,
-            }))
-          );
-        }
+        handleTableResponse(res, setData, setTotalRows, setLoading);
       })
       .catch((e) => {
         console.error("Failed to load devices:", e);
@@ -73,17 +69,11 @@ const SettingsLogs = () => {
             row={el}
             collapseComponent={<SettingsLogsDetail data={el} />}
           >
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.changed_by || "N/A"}
             </TableCell>
 
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.changed_at
                 ? dayjs(el?.changed_at).format("DD-MM-YYYY HH:mm")
                 : "N/A"}
@@ -100,14 +90,13 @@ const SettingsLogs = () => {
           </RowComponent>
         ))}
       </TableComponent>
-      <TablePagination
-        component="div"
-        count={totalRows || 0}
+      <TablePaginationComponent
+        totalRows={totalRows}
         page={searchQueries?.page}
+        pageSize={searchQueries?.pageSize}
         onPageChange={(e, newPage) => {
           setSearchQueries({ ...searchQueries, page: newPage });
         }}
-        rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
           setSearchQueries({
             ...searchQueries,

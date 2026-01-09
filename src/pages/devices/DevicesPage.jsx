@@ -4,19 +4,15 @@ import { useEffect, useState } from "react";
 import { AsyncPaginate } from "react-select-async-paginate";
 import { toast } from "react-toastify";
 //COMPONENT
-import {
-  Card,
-  FormControl,
-  TableCell,
-  TablePagination,
-  useTheme,
-} from "@mui/material";
+import { Card, FormControl, TableCell, useTheme } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import Filters from "../../Components/Filters/Filters";
 import RowComponent from "../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../Components/shared/table-component/TableComponent";
+import TablePaginationComponent from "../../Components/shared/table-component/TablePaginationComponent";
 import { getAllDevices } from "../../core/apis/devicesAPI";
 import { getAllUsersDropdown } from "../../core/apis/usersAPI";
+import { handleTableResponse } from "../../core/helpers/utilFunctions";
 
 function DevicesPage() {
   const theme = useTheme();
@@ -43,18 +39,7 @@ function DevicesPage() {
       user,
     })
       .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-          setData([]);
-          setTotalRows(0);
-        } else {
-          setTotalRows(res?.count || 0);
-          setData(
-            res?.data?.map((el) => ({
-              ...el,
-            }))
-          );
-        }
+        handleTableResponse(res, setData, setTotalRows, setLoading);
       })
       .catch((e) => {
         toast.error("Failed to load devices");
@@ -116,6 +101,11 @@ function DevicesPage() {
     { name: "LoggedOut At" },
   ];
 
+  const tableCellStyles = {
+    sx: { minWidth: "200px" },
+    className: "max-w-[250px] truncate",
+  };
+
   return (
     <Card className="page-card">
       <Filters
@@ -164,42 +154,22 @@ function DevicesPage() {
       >
         {data?.map((el) => (
           <RowComponent key={el?.id} actions={true}>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
-              {el?.id || "N/A"}
-            </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>{el?.id || "N/A"}</TableCell>
+            <TableCell {...tableCellStyles}>
               {el?.manufacturer || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.device_model || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.ip_location || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.timestamp_login
                 ? dayjs(el?.timestamp_login).format("DD-MM-YYYY HH:mm")
                 : "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.timestamp_logout
                 ? dayjs(el?.timestamp_logout).format("DD-MM-YYYY HH:mm")
                 : "N/A"}
@@ -207,14 +177,13 @@ function DevicesPage() {
           </RowComponent>
         ))}
       </TableComponent>
-      <TablePagination
-        component="div"
-        count={totalRows || 0}
+      <TablePaginationComponent
+        totalRows={totalRows}
         page={searchQueries?.page}
+        pageSize={searchQueries?.pageSize}
         onPageChange={(e, newPage) => {
           setSearchQueries({ ...searchQueries, page: newPage });
         }}
-        rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
           setSearchQueries({
             ...searchQueries,

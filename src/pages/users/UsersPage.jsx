@@ -84,6 +84,11 @@ function UsersPage() {
     { name: "Should Notify" },
   ];
 
+  const tableCellStyles = {
+    sx: { minWidth: "200px" },
+    className: "max-w-[250px] truncate",
+  };
+
   return (
     <Card className="page-card">
       <Filters
@@ -137,24 +142,15 @@ function UsersPage() {
             actions={true}
             onView={() => navigate(`/users/${el?.id}`)}
           >
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.first_name || el?.last_name
                 ? `${el?.first_name || ""} ${el?.last_name || ""}`
                 : "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.email || "N/A"}
             </TableCell>
-            <TableCell
-              sx={{ minWidth: "200px" }}
-              className={"max-w-[250px] truncate"}
-            >
+            <TableCell {...tableCellStyles}>
               {el?.msisdn || "N/A"}
             </TableCell>
             <TableCell>

@@ -147,7 +147,6 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
                   fieldState: { error },
                 }) => (
                   <FormDropdownList
-                    id={"promotion_rule_action_id"}
                     placeholder={"Select Action"}
                     value={value || null}
                     data={actions || []}
@@ -157,6 +156,7 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
                     disabled={data}
                   />
                 )}
+                id={"promotion_rule_action_id"}
                 name="promotion_rule_action_id"
                 control={control}
               />
@@ -179,6 +179,7 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
                     disabled={data}
                   />
                 )}
+                id={"promotion_rule_event_id"}
                 name="promotion_rule_event_id"
                 control={control}
               />
@@ -191,7 +192,6 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
                   fieldState: { error },
                 }) => (
                   <FormInput
-                    id={"max_usage"}
                     type="number"
                     placeholder={"Enter Max Usage"}
                     value={value}
@@ -200,6 +200,7 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
                     disabled={data}
                   />
                 )}
+                id={"max_usage"}
                 name="max_usage"
                 control={control}
               />
@@ -212,7 +213,6 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
                   fieldState: { error },
                 }) => (
                   <FormDropdownList
-                    id={"beneficiary"}
                     placeholder={"Select beneficiary"}
                     value={value || null}
                     data={beneficiaryData}
@@ -221,6 +221,7 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
                     onChange={(value) => onChange(value)}
                   />
                 )}
+                id={"beneficiary"}
                 name="beneficiary"
                 control={control}
               />
