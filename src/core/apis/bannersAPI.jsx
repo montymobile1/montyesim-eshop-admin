@@ -125,43 +125,34 @@ export const editBanner = async (payload) => {
 };
 
 export const checkTitleUnique = async (payload, id) => {
-  try {
-    const res = await api(() => {
-      let query = supabase
-        .from("banner")
-        .select("id")
-        .eq("title", payload)
-        .limit(1);
+  const res = await api(() => {
+    let query = supabase
+      .from("banner")
+      .select("id")
+      .eq("title", payload)
+      .limit(1);
 
-      if (id) {
-        query = query.neq("id", id);
-      }
+    if (id) {
+      query = query.neq("id", id);
+    }
 
-      return query;
-    });
+    return query;
+  });
 
-    return res;
-  } catch (error) {
-    throw error;
-  }
+  return res;
 };
 
 export const getBannerById = async (id) => {
-  try {
-    const res = await api(() => {
-      let query = supabase
-        .from("banner")
-        .select("*")
-        .eq("id", id)
-        .order("created_at", { ascending: true })
-        .single();
-      return query;
-    });
+  const res = await api(() => {
+    return supabase
+      .from("banner")
+      .select("*")
+      .eq("id", id)
+      .order("created_at", { ascending: true })
+      .single();
+  });
 
-    return res;
-  } catch (error) {
-    throw error;
-  }
+  return res;
 };
 
 export const deleteBanner = async (id) => {

@@ -1,4 +1,7 @@
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
+import ViewListIcon from "@mui/icons-material/ViewList";
 import {
   Card,
   FormControl,
@@ -12,9 +15,6 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import ViewListIcon from "@mui/icons-material/ViewList";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Filters from "../../Components/Filters/Filters";
@@ -28,8 +28,6 @@ import {
   toggleGroupStatus,
 } from "../../core/apis/groupsAPI";
 import { displayTypes, groupTypes } from "../../core/vairables/EnumData";
-import { set } from "react-hook-form";
-import { DragHandle } from "@mui/icons-material";
 
 const GroupsList = () => {
   const navigate = useNavigate();
@@ -121,7 +119,6 @@ const GroupsList = () => {
     );
   };
 
-  const canChangeOrder = () => {};
   return (
     <>
       <Card className="page-card">

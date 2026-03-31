@@ -2,13 +2,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { Check } from "@mui/icons-material";
 import CloseIcon from "@mui/icons-material/Close";
 import InfoIcon from "@mui/icons-material/Info";
-import {
-  Button,
-  Card,
-  CardContent,
-  CircularProgress,
-  Tooltip,
-} from "@mui/material";
+import { Button, Card, CircularProgress, Tooltip } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -147,7 +141,7 @@ const HandleBanners = () => {
       checkTitleUniqueness(value, id);
     },
 
-    500
+    500,
   );
 
   const checkTitleUniqueness = (value, id) => {

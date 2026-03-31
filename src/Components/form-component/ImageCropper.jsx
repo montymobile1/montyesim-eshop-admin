@@ -1,8 +1,8 @@
+import { ArrowLeft } from "@mui/icons-material";
+import { Box, Button, Stack } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
-import getCroppedImg from "../../core/helpers/imageHelpers";
 import Cropper from "react-easy-crop";
-import { Box, Button, Stack, Typography } from "@mui/material";
-import { ArrowLeft, Crop } from "@mui/icons-material";
+import getCroppedImg from "../../core/helpers/imageHelpers";
 
 export const ImageCropper = ({ imageSrc, setCroppedImage, onBack, aspect }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -14,7 +14,7 @@ export const ImageCropper = ({ imageSrc, setCroppedImage, onBack, aspect }) => {
     (croppedArea, croppedAreaPixels) => {
       setCroppedAreaPixels(croppedAreaPixels);
     },
-    []
+    [],
   );
 
   // Expose cropping to parent
@@ -24,7 +24,7 @@ export const ImageCropper = ({ imageSrc, setCroppedImage, onBack, aspect }) => {
       const croppedImage = await getCroppedImg(
         imageSrc,
         croppedAreaPixels,
-        rotation
+        rotation,
       );
       console.log(croppedImage, "the cropped image");
       setCroppedImage(croppedImage);

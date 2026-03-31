@@ -58,7 +58,7 @@ export const updateTagGroupsOrder = async (groups) => {
 
     if (error) throw error;
 
-    const { data: appConfig, error: appConfigError } = await supabase
+    const { error: appConfigError } = await supabase
       .from("app_config")
       .select("value")
       .eq("key", "APP_CACHE_KEY")

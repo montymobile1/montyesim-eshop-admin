@@ -1,8 +1,8 @@
 import ChangeCircleIcon from "@mui/icons-material/ChangeCircle";
+import DeleteIcon from "@mui/icons-material/Delete";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import RemoveRedEyeOutlinedIcon from "@mui/icons-material/RemoveRedEyeOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import DeleteIcon from "@mui/icons-material/Delete";
 
 import {
   Autocomplete,
@@ -19,16 +19,15 @@ import {
   IconButton,
   InputAdornment,
   TextField,
-  Tooltip,
 } from "@mui/material";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import dayjs from "dayjs";
+import React, { useEffect, useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import AvatarEditorComponent from "../shared/avatar-editor/AvatarEditorComponent";
-import dayjs from "dayjs";
 
 import DatePicker from "react-datepicker";
-import "./FormComponent.scss";
 import { FileUploader } from "react-drag-drop-files";
+import "./FormComponent.scss";
 import { ImageCropper } from "./ImageCropper";
 
 export const FormInput = (props) => {
