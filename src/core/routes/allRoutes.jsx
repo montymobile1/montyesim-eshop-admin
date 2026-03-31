@@ -21,6 +21,9 @@ import UserDetail from "../../pages/users/UserDetail";
 import UsersPage from "../../pages/users/UsersPage";
 import VoucherPage from "../../pages/vouchers/VoucherPage";
 import RouteWrapper from "./RouteWrapper";
+import HandleBanners from "../../pages/banners/HandleBanners";
+import BannersList from "../../pages/banners/BannersList";
+import GroupsTagReorder from "../../pages/groups/GroupsTagReorder";
 
 export const privateRoutes = [
   {
@@ -107,6 +110,17 @@ export const privateRoutes = [
         name: "Edit Group",
         regex: "^/groups/([0-9a-fA-F-]+)$",
       },
+      ...(import.meta.env.VITE_GROUP_TAG_ORDERING == "true"
+        ? [
+            {
+              path: "/groups/:id/reorder",
+              element: <GroupsTagReorder />,
+              key: "/groups/:id/reorder",
+              name: "Reorder Group's Tag",
+              regex: "^/groups/([0-9a-fA-F-]+)/reorder$",
+            },
+          ]
+        : []),
       {
         path: "/tags",
         element: <TagList />,
@@ -200,6 +214,27 @@ export const privateRoutes = [
             },
           ]
         : []),
+      {
+        path: "/banners",
+        element: <BannersList />,
+        key: "/banners",
+        name: "Banners",
+        regex: "^/banners/?$",
+      },
+      {
+        path: "/banners/add",
+        element: <HandleBanners />,
+        key: "/banners/add",
+        name: "Add Banners",
+        regex: "^/banners/add?$",
+      },
+      {
+        path: "/banners/:id",
+        element: <HandleBanners />,
+        key: "/banners/:id",
+        name: "Edit Banners",
+        regex: "^/banners/([0-9a-fA-F-]+)?$",
+      },
       {
         path: "*",
         element: <PageNotFound />,

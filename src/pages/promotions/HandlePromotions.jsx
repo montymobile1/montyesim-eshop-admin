@@ -365,6 +365,17 @@ const HandlePromotions = () => {
       return <CloseIcon color="error" sx={{ cursor: "default" }} />;
     }
   }, [nameUnique?.check]);
+
+  const AspectiRatioDisplay = useMemo(() => {
+    if (watch("platform")?.id === "mobile") {
+      return { value: 2 / 1, display: "2:1" };
+    }
+    if (watch("platform")?.id === "web") {
+      return { value: 10 / 3, display: "10:3" };
+    }
+    return { value: 16 / 3, display: "16:3" };
+  }, [watch("platform")?.id]);
+
   if (id && loading) {
     return <FormsSkeletons />;
   }

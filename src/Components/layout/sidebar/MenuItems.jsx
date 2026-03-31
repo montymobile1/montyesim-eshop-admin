@@ -30,7 +30,7 @@ const MenuItems = ({
   };
 
   return (
-    <div key={item.recordGuid} style={{ marginLeft: level * 20 }}>
+    <div key={item.key} style={{ marginLeft: level * 20 }}>
       <ListItemButton
         onClick={handleClick}
         to={isClickable ? `/${item.uri}` : undefined}
@@ -75,7 +75,7 @@ const MenuItems = ({
 
         {open &&
           hasChildren &&
-          (openMenus[item.recordGuid] ? <ExpandLess /> : <ExpandMore />)}
+          (openMenus[item.key] ? <ExpandLess /> : <ExpandMore />)}
       </ListItemButton>
 
       {hasChildren && (

@@ -4,7 +4,7 @@ export const buildMenuHierarchy = (menuItems) => {
 
   // Step 1: Populate menuMap and initialize children array
   menuItems.forEach((item) => {
-    menuMap.set(item.recordGuid, { ...item, children: [] });
+    menuMap.set(item.key, { ...item, children: [] });
   });
 
   // Step 2: Identify missing parents
@@ -15,22 +15,13 @@ export const buildMenuHierarchy = (menuItems) => {
   // Step 3: Attach children to their respective parents
   validPages.forEach((item) => {
     if (item.parentGuid && menuMap.has(item.parentGuid)) {
-      menuMap.get(item.parentGuid).children.push(menuMap.get(item.recordGuid));
+      menuMap.get(item.parentGuid).children.push(menuMap.get(item.key));
     } else {
-      rootMenus.push(menuMap.get(item.recordGuid));
+      rootMenus.push(menuMap.get(item.key));
     }
   });
 
-  // Step 4: Sort by `displayOrder`
-  const sortMenu = (items) =>
-    items
-      .sort((a, b) => a.displayOrder - b.displayOrder)
-      .map((item) => ({
-        ...item,
-        children: sortMenu(item.children),
-      }));
-
-  return sortMenu(rootMenus);
+  return rootMenus;
 };
 
 export const openedMixin = (theme) => ({

@@ -2,22 +2,34 @@ import ChangeCircleIcon from "@mui/icons-material/ChangeCircle";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import RemoveRedEyeOutlinedIcon from "@mui/icons-material/RemoveRedEyeOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import DeleteIcon from "@mui/icons-material/Delete";
+
 import {
   Autocomplete,
   Avatar,
+  Button,
+  CardMedia,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   FormHelperText,
   IconButton,
   InputAdornment,
   TextField,
+  Tooltip,
 } from "@mui/material";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import AvatarEditorComponent from "../shared/avatar-editor/AvatarEditorComponent";
 import dayjs from "dayjs";
+
 import DatePicker from "react-datepicker";
 import "./FormComponent.scss";
+import { FileUploader } from "react-drag-drop-files";
+import { ImageCropper } from "./ImageCropper";
 
 export const FormInput = (props) => {
   const {
@@ -427,5 +439,144 @@ export const FormDate = (props) => {
         autoComplete: "new-password",
       }}
     />
+  );
+};
+
+export const FormSingleImageUpload = ({
+  onChange,
+  aspectRatio = 1,
+  value,
+  name,
+  helperText,
+}) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [step, setStep] = useState("upload");
+  const [tempImage, setTempImage] = useState(null);
+  const [croppedImage, setCroppedImage] = useState(null);
+
+  const handleOpenDialog = () => setDialogOpen(true);
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setTempImage(null);
+    setCroppedImage(null);
+    setStep("upload");
+  };
+
+  const handleDialogUpload = (file) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setTempImage(reader.result);
+      setStep("crop");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    onChange(null, false, "");
+  };
+
+  const handleBack = () => {
+    setTempImage(null);
+    setStep("upload");
+  };
+
+  const handleSave = () => {
+    if (croppedImage) {
+      onChange(croppedImage); // send cropped image directly
+    }
+    handleCloseDialog();
+  };
+
+  const fileTypes = ["png", "jpg", "jpeg", "svg"];
+
+  return (
+    <div className="form-input-wrapper">
+      {/* Preview */}
+      {value ? (
+        <div className="flex items-center gap-2">
+          <CardMedia
+            component="img"
+            alt="Image"
+            height="200px"
+            image={value instanceof File ? URL.createObjectURL(value) : value}
+            style={{ width: 200, objectFit: "cover", borderRadius: 8 }}
+          />
+          <span>
+            {value instanceof File ? value.name : value.split("/").pop()}
+          </span>
+          <IconButton
+            aria-label="delete"
+            color="error"
+            onClick={handleRemoveImage}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </div>
+      ) : (
+        <div
+          className="flex cursor-pointer items-center gap-2"
+          onClick={handleOpenDialog}
+        >
+          <div className="w-full h-[40px] rounded-xl border flex items-center gap-2 px-2">
+            <FileUploadIcon />
+            <span className="text-gray-400 font-normal">Upload</span>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog for upload/crop */}
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Upload & Crop Image</DialogTitle>
+        <DialogContent>
+          {!tempImage ? (
+            <FileUploader
+              types={fileTypes}
+              name={name}
+              multiple={false}
+              classes="w-full"
+              handleChange={handleDialogUpload}
+            >
+              <div className="w-full h-[200px] rounded-xl border flex flex-col items-center justify-center cursor-pointer">
+                <FileUploadIcon />
+                <span className="text-gray-400 font-normal">Upload</span>
+              </div>
+            </FileUploader>
+          ) : (
+            <ImageCropper
+              imageSrc={tempImage}
+              setCroppedImage={setCroppedImage} // cropped image stored here
+              onBack={handleBack}
+              aspect={aspectRatio}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleCloseDialog}
+          >
+            Cancel
+          </Button>
+          {tempImage && (
+            <Button onClick={handleSave} color="primary" variant="contained">
+              Save
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {helperText && (
+        <FormControl>
+          <FormHelperText>{helperText}</FormHelperText>
+        </FormControl>
+      )}
+    </div>
   );
 };

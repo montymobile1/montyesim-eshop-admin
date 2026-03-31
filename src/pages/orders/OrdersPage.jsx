@@ -13,23 +13,39 @@ import TableComponent from "../../Components/shared/table-component/TableCompone
 import TablePaginationComponent from "../../Components/shared/table-component/TablePaginationComponent";
 import TagComponent from "../../Components/shared/tag-component/TagComponent";
 import { getAllOrders } from "../../core/apis/ordersAPI";
-import { getAllUsersDropdown } from "../../core/apis/usersAPI";
 import { handleTableResponse } from "../../core/helpers/utilFunctions";
+import { getAllUsersDropdown, getUserById } from "../../core/apis/usersAPI";
+import useQueryParams from "../../core/custom-hook/useQueryParams";
+import { useSearchParams } from "react-router-dom";
+import { FormDropdownList } from "../../Components/form-component/FormComponent";
 
 function OrdersPage() {
   const theme = useTheme();
 
   const asyncPaginateStyles = theme?.asyncPaginateStyles || {};
+  const [searchParams] = useSearchParams();
+  const supportPromo = import.meta.env.VITE_SUPPORT_PROMO == "true";
+  const supportReferral = import.meta.env.VITE_APP_REFER_AND_EARN == "true";
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState(null);
   const [totalRows, setTotalRows] = useState(0);
   const [data, setData] = useState([]);
   const [searchQueries, setSearchQueries] = useState({
-    pageSize: 10,
-    page: 0,
-    user: null,
+    pageSize: searchParams.get("pageSize") || 10,
+    page: searchParams.get("page") || 0,
+    user: searchParams.get("user") || null,
+    status: searchParams.get("status") || null,
+    sortBy: searchParams.get("sortBy") || "created_at",
+    sortDirection: searchParams.get("sortDirection") || "desc",
   });
+
+  const statusOptions = [
+    { id: "pending", name: "Pending" },
+    { id: "success", name: "Success" },
+    { id: "canceled", name: "Canceled" },
+  ];
 
   const loadOptions = async (search, loadedOptions, { page }) => {
     const pageSize = 10;
@@ -57,28 +73,67 @@ function OrdersPage() {
     }
   };
 
+  const requestSort = (key) => {
+    let direction = "desc";
+
+    // toggle direction if sorting on same column
+    if (searchQueries.sortBy === key && searchQueries.sortDirection === "asc") {
+      direction = "desc";
+    }
+
+    setSearchQueries({
+      ...searchQueries,
+      sortBy: key,
+      sortDirection: direction,
+      page: 0,
+    });
+  };
+
   const getOrders = async () => {
     setLoading(true);
 
-    const { page, pageSize, user } = searchQueries;
+    const { page, pageSize, user, status, sortBy, sortDirection } =
+      searchQueries;
     getAllOrders({
       page,
       pageSize,
       user,
+      status,
+      sortBy,
+      sortDirection,
     })
       .then((res) => {
         handleTableResponse(res, setData, setTotalRows, setLoading);
       })
       .catch(() => {
-        toast.error("Failed to load devices");
+        toast.error("Failed to load orders");
       })
       .finally(() => {
         setLoading(false);
       });
   };
 
+  const handleQueryParams = useQueryParams(searchQueries);
+
   useEffect(() => {
     getOrders();
+  }, [searchQueries]);
+
+  const initSelectedUser = async () => {
+    if (searchQueries.user && !selectedUser) {
+      const user = await getUserById(searchQueries?.user);
+      if (user) {
+        setSelectedUser({
+          value: user?.data?.id,
+          label: user?.data?.email || user?.data?.metadata?.email,
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    handleQueryParams();
+    initSelectedUser();
   }, [searchQueries]);
 
   const resetFilters = () => {
@@ -86,12 +141,19 @@ function OrdersPage() {
       pageSize: 10,
       page: 0,
       user: null,
+      status: null,
     });
     setSelectedUser(null);
+    setSelectedStatus(null);
   };
 
   const applyFilter = () => {
-    setSearchQueries({ ...searchQueries, user: selectedUser?.id });
+    setSearchQueries({
+      ...searchQueries,
+      user: selectedUser?.id,
+      status: selectedStatus?.id,
+      page: 0,
+    });
   };
 
   const tableHeaders = [
@@ -99,14 +161,15 @@ function OrdersPage() {
     { name: "User Email" },
     { name: "User Phone" },
     { name: "Bundle Name" },
-    { name: "Amount" },
-    { name: "Promo Code" },
-    { name: "Referral Code" },
+    { name: "Amount", sorted: "amount" },
+    ...(supportPromo ? [{ name: "Promo Code" }] : []),
+    ...(supportReferral ? [{ name: "Referral Code" }] : []),
+
     { name: "Order Type" },
     { name: "Order Status" },
     { name: "Payment Status" },
 
-    { name: "Created At" },
+    { name: "Created At", sorted: "created_at" },
   ];
 
   const tableCellStyles = {
@@ -119,7 +182,7 @@ function OrdersPage() {
       <Filters
         onReset={resetFilters}
         onApply={applyFilter}
-        applyDisable={!selectedUser}
+        applyDisable={!selectedUser && !selectedStatus}
       >
         <Grid container size={{ xs: 12 }} spacing={2}>
           <Grid item size={{ xs: 12, sm: 3 }}>
@@ -144,6 +207,20 @@ function OrdersPage() {
               />
             </FormControl>
           </Grid>
+          <Grid item size={{ xs: 12, sm: 3 }}>
+            <FormControl fullWidth>
+              <label className="mb-2" htmlFor="status-input">
+                Order Status
+              </label>
+              <FormDropdownList
+                placeholder={"Select Status"}
+                value={selectedStatus}
+                data={statusOptions || []}
+                accessName={"name"}
+                onChange={(value) => setSelectedStatus(value)}
+              />
+            </FormControl>
+          </Grid>
         </Grid>
       </Filters>
       <TableComponent
@@ -153,6 +230,9 @@ function OrdersPage() {
         noDataFound={"No Orders Found"}
         tableHeaders={tableHeaders}
         actions={true}
+        requestSort={requestSort}
+        sortedBy={searchQueries?.sortBy}
+        sortDirection={searchQueries?.sortDirection}
       >
         {data?.map((el) => (
           <RowComponent key={el?.id} actions={true}>
@@ -178,12 +258,17 @@ function OrdersPage() {
                 decimals={2}
               />
             </TableCell>
-            <TableCell {...tableCellStyles}>
-              {el?.promo_code || "N/A"}
-            </TableCell>
-            <TableCell {...tableCellStyles}>
-              {el?.referral_code || "N/A"}
-            </TableCell>
+            {supportPromo && (
+              <TableCell {...tableCellStyles}>
+                {el?.promo_code || "N/A"}
+              </TableCell>
+            )}
+            {supportReferral && (
+              <TableCell {...tableCellStyles}>
+                {el?.referral_code || "N/A"}
+              </TableCell>
+            )}
+
             <TableCell {...tableCellStyles}>
               {el?.order_type || "N/A"}
             </TableCell>

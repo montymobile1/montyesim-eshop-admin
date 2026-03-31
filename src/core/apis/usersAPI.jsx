@@ -118,3 +118,22 @@ export const getAllWalletTransactions = async (
     total: parsed.total || 0,
   };
 };
+
+export const getUserById = async (id) => {
+  try {
+    const res = await api(() => {
+      let query = supabase
+        .from("users_copy")
+        .select("*", { count: "exact" })
+
+        .eq("id", id)
+        .single();
+
+      return query;
+    });
+
+    return res;
+  } catch (error) {
+    throw error;
+  }
+};

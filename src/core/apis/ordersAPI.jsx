@@ -1,9 +1,17 @@
 import { api } from "./apiInstance";
 import supabase from "./supabase";
 
-export const getAllOrders = async ({ page, pageSize, user }) => {
+export const getAllOrders = async ({
+  page,
+  pageSize,
+  user,
+  status,
+  sortBy,
+  sortDirection,
+}) => {
+  console.log(sortBy, sortDirection);
   const from = page * pageSize;
-  const to = from + pageSize - 1;
+  const to = from + Number.parseInt(pageSize) - 1;
 
   try {
     // Step 1: Fetch orders
@@ -11,10 +19,17 @@ export const getAllOrders = async ({ page, pageSize, user }) => {
       let query = supabase
         .from("user_order")
         .select("*", { count: "exact" })
-        .order("created_at", { ascending: false });
+        .neq("order_type", "Wallet_Top_Up")
+        .order(sortBy || "created_at", {
+          ascending: sortDirection == "asc",
+        });
 
       if (user) {
         query = query.eq("user_id", user);
+      }
+
+      if (status) {
+        query = query.eq("order_status", status);
       }
 
       query = query.range(from, to);

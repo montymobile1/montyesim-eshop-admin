@@ -26,17 +26,20 @@ export const getAllGroups = async (page, pageSize, name, async = false) => {
   }
 };
 
-export const getGroupById = async (id) => {
+export const getGroupById = async (id, search) => {
   try {
     const res = await api(() => {
       let query = supabase
         .from("tag_group")
-        .select("*,tag(*)", { count: "exact" })
+        .select("*, tag(*)", { count: "exact" })
         .eq("id", id)
-        .order("created_at", { referencedTable: "tag", ascending: false })
-        .single();
+        .order("sorting_number", { referencedTable: "tag", ascending: true });
 
-      return query;
+      if (search && search.trim() !== "") {
+        query = query.ilike("tag.name", `%${search}%`);
+      }
+
+      return query.single();
     });
 
     return res;
@@ -46,6 +49,34 @@ export const getGroupById = async (id) => {
   }
 };
 
+export const updateTagGroupsOrder = async (groups) => {
+  try {
+    const { data, error } = await supabase
+      .from("tag")
+      .upsert(groups, { onConflict: "id" })
+      .select();
+
+    if (error) throw error;
+
+    const { data: appConfig, error: appConfigError } = await supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "APP_CACHE_KEY")
+      .single();
+
+    if (!appConfigError) {
+      const newUuid = crypto.randomUUID();
+      await supabase
+        .from("app_config")
+        .update({ value: newUuid })
+        .eq("key", "APP_CACHE_KEY");
+    }
+    return data;
+  } catch (err) {
+    console.error("Error updating multiple tag_groups:", err);
+    throw err;
+  }
+};
 export const toggleGroupStatus = async ({ id, currentValue }) => {
   try {
     const res = await api(() => {
@@ -172,7 +203,7 @@ export const addGroup = async (payload) => {
         icon,
         data,
       })),
-    })
+    }),
   );
 
   if (rpcRes?.error) {
@@ -202,7 +233,7 @@ export const deleteGroup = async (groupId) => {
   const rpcRes = await api(() =>
     supabase.rpc("delete_group_if_no_bundle", {
       _group_id: groupId,
-    })
+    }),
   );
 
   if (rpcRes?.error) {
@@ -316,7 +347,7 @@ we need to clean up any uploaded icons for tags that were uploaded successfully.
           },
         }),
       };
-    })
+    }),
   );
 
   const hasUploadError = uploadResults.some((t) => t.error);
@@ -328,7 +359,7 @@ we need to clean up any uploaded icons for tags that were uploaded successfully.
   // 2. Call RPC
   const newTags = uploadResults.filter((t) => !t.id);
   const updatedTags = uploadResults.filter((t) => t.id);
-
+  console.log("checkkk", newTags, "neww tags", updatedTags, "updated tags");
   const rpcRes = await api(() =>
     supabase.rpc("edit_tag_group", {
       p_id: id,
@@ -338,7 +369,7 @@ we need to clean up any uploaded icons for tags that were uploaded successfully.
       p_new_tags: newTags,
       p_updated_tags: updatedTags,
       p_deleted_tag_ids: deletedTags?.map((tag) => tag.id),
-    })
+    }),
   );
 
   if (rpcRes?.error) {
@@ -350,4 +381,21 @@ we need to clean up any uploaded icons for tags that were uploaded successfully.
   await cleanupTagUploadedIcons(deletedTags);
 
   return rpcRes;
+};
+
+export const getTopCountriesCount = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "TOP_COUNTRIES_COUNT")
+      .single();
+
+    if (error) throw error;
+
+    return data?.value;
+  } catch (error) {
+    console.error("error in getTopCountriesCount:", error);
+    throw error;
+  }
 };

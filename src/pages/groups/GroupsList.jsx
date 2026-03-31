@@ -3,13 +3,18 @@ import {
   Card,
   FormControl,
   Grid2,
+  IconButton,
   Switch,
   TableCell,
   TablePagination,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import ViewListIcon from "@mui/icons-material/ViewList";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Filters from "../../Components/Filters/Filters";
@@ -23,10 +28,13 @@ import {
   toggleGroupStatus,
 } from "../../core/apis/groupsAPI";
 import { displayTypes, groupTypes } from "../../core/vairables/EnumData";
+import { set } from "react-hook-form";
+import { DragHandle } from "@mui/icons-material";
 
 const GroupsList = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const canReorder = import.meta.env.VITE_GROUP_TAG_ORDERING == "true";
   const [openDelete, setOpenDelete] = useState({ open: false, data: null });
   const [openNotice, setOpenNotice] = useState({ open: false, data: null });
   const [data, setData] = useState([]);
@@ -57,7 +65,7 @@ const GroupsList = () => {
           data?.map((el) => ({
             ...el,
             ...el?.metadata,
-          }))
+          })),
         );
         setLoading(false);
       }
@@ -109,10 +117,11 @@ const GroupsList = () => {
         if (!res?.error) {
           getGroups();
         }
-      }
+      },
     );
   };
 
+  const canChangeOrder = () => {};
   return (
     <>
       <Card className="page-card">
@@ -163,12 +172,7 @@ const GroupsList = () => {
           onAdd={() => navigate("/groups/add")}
         >
           {data?.map((el) => (
-            <RowComponent
-              key={el?.id}
-              actions={true}
-              onEdit={() => navigate(`/groups/${el?.id}`)}
-              onDelete={() => setOpenDelete({ open: true, data: el })}
-            >
+            <RowComponent key={el?.id} actions={false}>
               <TableCell
                 sx={{ minWidth: "200px" }}
                 className={"max-w-[250px] truncate"}
@@ -198,6 +202,43 @@ const GroupsList = () => {
                 className={"max-w-[250px] truncate"}
               >
                 {dayjs(el?.created_at).format("DD-MM-YYYY HH:mm")}
+              </TableCell>
+              <TableCell align={"right"}>
+                {el?.type == 1 && canReorder && (
+                  <Tooltip title={"Reorder"} placement={"top"}>
+                    <IconButton
+                      color="primary"
+                      aria-label="reorder"
+                      onClick={(event) => {
+                        navigate(`/groups/${el?.id}/reorder`);
+                      }}
+                    >
+                      <ViewListIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                <Tooltip title={"Edit"} placement={"top"}>
+                  <IconButton
+                    color="primary"
+                    aria-label="edit"
+                    onClick={() => {
+                      navigate(`/groups/${el?.id}`);
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title={"Delete"} placement={"top"}>
+                  <IconButton
+                    color="error"
+                    aria-label="delete"
+                    onClick={(event) => {
+                      setOpenDelete({ open: true, data: el });
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </TableCell>
             </RowComponent>
           ))}

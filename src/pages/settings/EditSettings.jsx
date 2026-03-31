@@ -18,8 +18,26 @@ const schema = yup.object().shape({
   settings: yup.array().of(
     yup.object().shape({
       key: yup.string().required().nullable(false),
-      value: yup.string().required().nullable(false),
-    })
+      value: yup
+        .string()
+        .required()
+        .nullable(false)
+        .label("Value")
+        .test(
+          "not-negative-number",
+          "Value cannot be a negative number",
+          (value) => {
+            if (!value) return true;
+
+            // check if it is a numeric value
+            if (!isNaN(value)) {
+              return Number(value) >= 0;
+            }
+
+            return true;
+          },
+        ),
+    }),
   ),
 });
 
@@ -35,7 +53,7 @@ const EditSettings = () => {
   const {
     control,
     getValues,
-
+    handleSubmit,
     reset,
     formState: { isDirty },
   } = useForm({
@@ -104,6 +122,11 @@ const EditSettings = () => {
     handleSubmitForm(payload);
   };
 
+  const onFormSubmit = handleSubmit(() => {
+    // Open confirmation only if validation passes
+    setConfirmOpen(true);
+  });
+
   if (loading) {
     return <FormsSkeletons />;
   }
@@ -117,7 +140,7 @@ const EditSettings = () => {
         className={"flex flex-col p-6 gap-[1rem] sm:w-[80%]"}
         onSubmit={(e) => {
           e.preventDefault();
-          setConfirmOpen(true);
+          onFormSubmit();
         }}
       >
         <div className="flex flex-col gap-[1rem]">
@@ -197,7 +220,15 @@ const EditSettings = () => {
               {/* Action Buttons */}
               <div className="flex flex-row  justify-center items-center w-[60px]">
                 {/* Add Button (only functional for first row) */}
-
+                {index == fields?.length - 1 && (
+                  <IconButton
+                    color="primary"
+                    size="small"
+                    onClick={() => append({ key: "", value: "" })}
+                  >
+                    <AddIcon fontSize="small" />
+                  </IconButton>
+                )}
                 {/* Remove Button */}
                 <IconButton
                   color="error"
@@ -212,14 +243,6 @@ const EditSettings = () => {
                   disabled={fields.length === 1}
                 >
                   <RemoveIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  color="primary"
-                  size="small"
-                  onClick={() => append({ key: "", value: "" })}
-                  className={index === fields?.length - 1 && "invisible"}
-                >
-                  <AddIcon fontSize="small" />
                 </IconButton>
               </div>
             </div>

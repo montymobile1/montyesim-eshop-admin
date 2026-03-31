@@ -21,14 +21,14 @@ import { displayTypes, groupTypes } from "../../core/vairables/EnumData";
 const schema = yup.object().shape({
   name: yup
     .string()
-    .label("Name")
+    .label("Group name")
     .max(30)
     .required()
     .nullable()
     .test(
       "not-only-spaces",
       "Name cannot be only spaces",
-      (value) => value == null || value.trim().length > 0
+      (value) => value == null || value.trim().length > 0,
     ),
   type: yup.object().label("Type").required().nullable(),
   group_category: yup.object().label("Group type").required().nullable(),
@@ -42,12 +42,12 @@ const schema = yup.object().shape({
           name: yup
             .string()
             .label("Name")
-            .max(30)
+            .max(50)
             .nullable()
             .test(
               "not-only-spaces",
               "Name cannot be only spaces",
-              (value) => value == null || value.trim().length > 0
+              (value) => value == null || value.trim().length > 0,
             )
             .test(
               "conditional-required",
@@ -66,18 +66,18 @@ const schema = yup.object().shape({
                 }
 
                 return true;
-              }
+              },
             ),
           icon: yup.mixed().label("Icon").nullable().required(),
-        })
+        }),
       ),
     otherwise: (schema) =>
       schema.of(
         yup.object().shape({
           tag_id: yup.string().nullable(),
-          name: yup.string().label("Name").max(30).nullable().required(),
+          name: yup.string().label("Name").max(50).nullable().required(),
           icon: yup.mixed().label("Icon").nullable().required(),
-        })
+        }),
       ),
   }),
 });
@@ -113,7 +113,12 @@ const GroupsHandle = () => {
     name: "tags",
   });
 
-  console.log(errors, "errorrss");
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      toast.error("Please check fields validation");
+    }
+  }, [errors]);
+
   useEffect(() => {
     if (id) {
       setLoading(true);
@@ -130,7 +135,7 @@ const GroupsHandle = () => {
                 displayTypes?.find((el) => el?.id === res?.data?.type) || null,
               group_category:
                 groupTypes?.find(
-                  (el) => el?.id === res?.data?.group_category
+                  (el) => el?.id === res?.data?.group_category,
                 ) || null,
               tags:
                 res?.data?.tag?.length === 0
@@ -194,7 +199,7 @@ const GroupsHandle = () => {
         setValue("tags.0.name", value, { shouldValidate: true });
     },
 
-    200
+    200,
   );
 
   const debouncedTagName = useDebouncedCallback(
@@ -202,7 +207,7 @@ const GroupsHandle = () => {
       setValue(`tags.${index}.name`, value, { shouldValidate: true });
     },
 
-    200
+    200,
   );
 
   if (id && loading) {
@@ -329,7 +334,7 @@ const GroupsHandle = () => {
         {fields?.map(
           (
             el,
-            index // NOSONAR
+            index, // NOSONAR
           ) => (
             <div
               className="flex flex-col gap-2 w-full sm:w-[70%]"
@@ -340,7 +345,7 @@ const GroupsHandle = () => {
                   "flex flex-row gap-2 justify-between items-end",
                   {
                     "!items-center": errors?.tags?.length > 0,
-                  }
+                  },
                 )}
               >
                 <div className="flex flex-col sm:flex-row gap-2 flex-1">
@@ -441,7 +446,7 @@ const GroupsHandle = () => {
                 </div>
               </div>
             </div>
-          )
+          ),
         )}
       </form>
     </Card>

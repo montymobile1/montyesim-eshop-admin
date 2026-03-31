@@ -15,7 +15,8 @@ import ContentPasteSearchIcon from "@mui/icons-material/ContentPasteSearch";
 
 export function TableCustomHeader(props) {
   const { headers, actions } = props;
-  const { orderBy, sortedBy, requestSort, onAdd, onEdit, onLogs } = props;
+
+  const { sortDirection, sortedBy, requestSort, onAdd, onEdit, onLogs } = props;
 
   const handleRequestSort = (item) => {
     requestSort(item);
@@ -27,11 +28,11 @@ export function TableCustomHeader(props) {
         {headers?.map((item, index) => (
           <TableCell
             key={index} // NOSONAR
-            sortDirection={sortedBy === item.sorted ? orderBy : false}
+            sortDirection={sortedBy === item.sorted ? sortDirection : false}
           >
             {item.sorted ? (
               <TableSortLabel
-                direction={sortedBy === item.sorted ? orderBy : "asc"}
+                direction={sortedBy === item.sorted ? sortDirection : "desc"}
                 active={sortedBy === item.sorted}
                 onClick={(e) => handleRequestSort(item.sorted)}
               >

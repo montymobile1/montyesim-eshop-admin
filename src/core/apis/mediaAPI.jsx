@@ -55,3 +55,31 @@ so to not delete the newly replaced one we added uuids
     throw error;
   }
 };
+
+export const deleteImage = async (imageUrl, bucketName) => {
+  try {
+    if (!imageUrl) return;
+
+    const bucket = bucketName; // your bucket name
+
+    // Extract path from public URL
+    // Example: https://<project>.supabase.co/storage/v1/object/public/banners-web/myfile.png
+    const parts = imageUrl.split(`${bucket}/`);
+    if (parts.length < 2) {
+      throw new Error("Invalid image URL");
+    }
+
+    const filePath = parts[1]; // "myfile.png" or "folder/myfile.png"
+
+    const { error } = await supabase.storage.from(bucket).remove([filePath]);
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  } catch (err) {
+    console.error("Failed to delete image:", err.message);
+    throw err;
+  }
+};

@@ -13,4 +13,14 @@ export const beneficiaryData = [
   { title: "Sender & Receiver", id: 2 },
 ];
 
+export const platformData = [
+  { title: "Web", id: "web" },
+  { title: "Mobile", id: "mobile" },
+];
+
+export const actionData = [
+  { title: "REFER_NOW", id: "REFER_NOW" },
+  { title: "CHAT", id: "CHAT" },
+  { title: "CASHBACK", id: "CASHBACK" },
+];
 export const DefaultCurrency = import.meta.env.VITE_CURRENCY_DEFAULT || "USD";

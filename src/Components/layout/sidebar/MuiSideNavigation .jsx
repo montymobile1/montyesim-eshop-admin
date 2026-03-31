@@ -70,7 +70,7 @@ const MuiSideNavigation = () => {
         ""
       ) : (
         <MenuItems
-          key={item?.recordGuid || index}
+          key={item?.key || index}
           item={item}
           level={level}
           hasChildren={hasChildren}
