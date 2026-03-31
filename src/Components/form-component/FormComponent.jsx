@@ -298,7 +298,7 @@ export const FormPaginationDropdownList = (props) => {
       handleResetData(false, value);
     },
     // delay in ms
-    500
+    500,
   );
 
   return (
@@ -517,6 +517,7 @@ export const FormSingleImageUpload = ({
         <div
           className="flex cursor-pointer items-center gap-2"
           onClick={handleOpenDialog}
+          onKeyDown={handleOpenDialog}
         >
           <div className="w-full h-[40px] rounded-xl border flex items-center gap-2 px-2">
             <FileUploadIcon />
