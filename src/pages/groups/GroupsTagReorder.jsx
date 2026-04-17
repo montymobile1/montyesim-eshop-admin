@@ -1,39 +1,36 @@
-import React, { useEffect, useState, useMemo } from "react";
+import {
+  DragIndicator,
+  Search as SearchIcon,
+  SortByAlpha,
+} from "@mui/icons-material";
+import NorthIcon from "@mui/icons-material/North";
+import {
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  FormControl,
+  IconButton,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Skeleton,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
+import NoDataFound from "../../Components/shared/fallbacks/no-data-found/NoDataFound";
 import {
   getGroupById,
   getTopCountriesCount,
   updateTagGroupsOrder,
 } from "../../core/apis/groupsAPI";
-import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import {
-  Card,
-  TextField,
-  Button,
-  IconButton,
-  Avatar,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Typography,
-  FormControl,
-  Box,
-  CircularProgress,
-  CardContent,
-  Tooltip,
-  Skeleton,
-} from "@mui/material";
-import {
-  DragIndicator,
-  VerticalAlignTop,
-  SortByAlpha,
-  Search as SearchIcon,
-} from "@mui/icons-material";
-import NorthIcon from "@mui/icons-material/North";
-import Grid from "@mui/material/Grid2";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import NoDataFound from "../../Components/shared/fallbacks/no-data-found/NoDataFound";
 
 const DraggableTagItem = ({
   tag,

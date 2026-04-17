@@ -57,6 +57,11 @@ Please ensure the following environment variables are defined in your .env file 
 ```bash
     VITE_SUPABASE_URL=your-supabase-url
     VITE_SUPABASE_KEY=your-supabase-key
+    VITE_CURRENCY_DEFAULT=system default currency ex:"USD"
+    VITE_APP_REFER_AND_EARN=declare if refer and earn feature is enabled ex :TRUE
+    VITE_APP_VOUCHER_CODE=declare if voucher feature is enabled ex :TRUE
+    VITE_SUPPORT_PROMO=declare if promo feature is enabled ex :TRUE
+    VITE_GROUP_TAG_ORDERING=declare if group tag ordering (in groups ) feature is enabled ex :TRUE
 ```
 
 ## Supabase Calls

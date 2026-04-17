@@ -3,3 +3,7 @@ src/index.css merge=ours
 src/theme/themesConfig.js merge=ours
 index.html merge=keepMine
 public/logo/logo.png merge=ours -text
+.gitlab-ci.yml merge=ours
+nginx.conf merge=ours
+downstream-env.yml merge=ours
+.old-gitlab-ci.yml merge=ours

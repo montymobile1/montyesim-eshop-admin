@@ -88,7 +88,7 @@ const GroupsHandle = () => {
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(false);
-  const [deletedTags] = useState([]);
+  const [deletedTags, setDeletedTags] = useState([]);
   const {
     control,
     handleSubmit,
@@ -187,9 +187,25 @@ const GroupsHandle = () => {
   };
 
   const handleUpdateTag = (value) => {
+    // EXPLANATION : Taking into consideration the switch between group and tags
     if (value?.enum == "flat") {
-      remove();
-      append({ name: getValues("name"), icon: null });
+      const nameValue = getValues("name");
+
+      const existing = fields?.find((el) => el?.name === nameValue);
+
+      if (existing) {
+        const toDelete = fields?.filter((el) => el?.name !== nameValue);
+
+        setDeletedTags((prev) => [...prev, ...toDelete]);
+
+        remove();
+        append(existing);
+      } else {
+        setDeletedTags((prev) => [...prev, ...fields]);
+
+        remove();
+        append({ name: nameValue, icon: null });
+      }
     }
   };
 
