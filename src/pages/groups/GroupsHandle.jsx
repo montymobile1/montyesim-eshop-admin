@@ -1,7 +1,6 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Add, Info, Remove } from "@mui/icons-material";
 import { Button, Card, CardContent, IconButton, Tooltip } from "@mui/material";
-import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -10,6 +9,7 @@ import { useDebouncedCallback } from "use-debounce";
 import * as yup from "yup";
 import {
   FormAvatarEditor,
+  FormChipsInput,
   FormDropdownList,
   FormInput,
 } from "../../Components/form-component/FormComponent";
@@ -17,6 +17,13 @@ import NoDataFound from "../../Components/shared/fallbacks/no-data-found/NoDataF
 import GroupsHandleSkeletons from "../../Components/shared/skeletons/GroupsHandleSkeletons";
 import { addGroup, editGroup, getGroupById } from "../../core/apis/groupsAPI";
 import { displayTypes, groupTypes } from "../../core/vairables/EnumData";
+
+const searchKeywordSchema = yup
+  .array()
+  .of(yup.string())
+  .label("Search keyword")
+  .nullable()
+  .max(10, "You can add up to 10 search keywords only");
 
 const schema = yup.object().shape({
   name: yup
@@ -69,6 +76,7 @@ const schema = yup.object().shape({
               },
             ),
           icon: yup.mixed().label("Icon").nullable().required(),
+          search_keyword: searchKeywordSchema,
         }),
       ),
     otherwise: (schema) =>
@@ -77,6 +85,7 @@ const schema = yup.object().shape({
           tag_id: yup.string().nullable(),
           name: yup.string().label("Name").max(50).nullable().required(),
           icon: yup.mixed().label("Icon").nullable().required(),
+          search_keyword: searchKeywordSchema,
         }),
       ),
   }),
@@ -102,7 +111,7 @@ const GroupsHandle = () => {
       name: "",
       group_category: null,
       type: null,
-      tags: [{ name: "", icon: null, tag_id: null }],
+      tags: [{ name: "", icon: null, tag_id: null, search_keyword: [] }],
     },
     resolver: yupResolver(schema),
     mode: "all",
@@ -139,9 +148,22 @@ const GroupsHandle = () => {
                 ) || null,
               tags:
                 res?.data?.tag?.length === 0
-                  ? [{ name: "", icon: null, tag_id: null }]
+                  ? [{ name: "", icon: null, tag_id: null, search_keyword: [] }]
                   : res?.data?.tag?.map((el) => {
-                      return { ...el, tag_id: el?.id };
+                      return {
+                        ...el,
+                        tag_id: el?.id,
+                        search_keyword:
+                          typeof el?.data?.alternative_country === "string" &&
+                          el.data.alternative_country.trim() !== ""
+                            ? el.data.alternative_country
+                                .split(",")
+                                .map((keyword) => keyword.trim())
+                                .filter(Boolean)
+                            : Array.isArray(el?.data?.alternative_country)
+                              ? el.data.alternative_country
+                              : [],
+                      };
                     }),
             });
           }
@@ -162,10 +184,13 @@ const GroupsHandle = () => {
         type: payload?.type?.id,
         group_category: payload?.group_category?.id,
       },
-      tag: payload?.tags?.map(({ tag_id, ...rest }) => ({
+      tag: payload?.tags?.map(({ tag_id, search_keyword, ...rest }) => ({
         ...rest,
         name: rest?.name.trimEnd(),
         id: tag_id,
+        alternative_country: Array.isArray(search_keyword)
+          ? search_keyword.join(",")
+          : "",
       })),
       deletedTags: deletedTags?.map(({ tag_id, ...rest }) => ({
         ...rest,
@@ -204,7 +229,7 @@ const GroupsHandle = () => {
         setDeletedTags((prev) => [...prev, ...fields]);
 
         remove();
-        append({ name: nameValue, icon: null });
+        append({ name: nameValue, icon: null, search_keyword: [] });
       }
     }
   };
@@ -347,123 +372,137 @@ const GroupsHandle = () => {
           <h6 className="px-2">Tags</h6>
           <div className="w-[20px] h-px bg-gray-300" />
         </div>
-        {fields?.map(
-          (
-            el,
-            index, // NOSONAR
-          ) => (
-            <div
-              className="flex flex-col gap-2 w-full sm:w-[70%]"
-              key={`tags-${el?.id}-${el?.index}`}
-            >
-              <div
-                className={clsx(
-                  "flex flex-row gap-2 justify-between items-end",
-                  {
-                    "!items-center": errors?.tags?.length > 0,
-                  },
-                )}
-              >
-                <div className="flex flex-col sm:flex-row gap-2 flex-1">
-                  <div className="w-full sm:w-1/2 min-w-0">
+        <div className="flex flex-col gap-3 w-full sm:w-[90%]">
+          {fields?.map(
+            (
+              el,
+              index, // NOSONAR
+            ) => {
+              const isFlat = watch("type")?.enum == "flat";
+              return (
+                <div
+                  key={`tags-${el?.id}-${el?.index}`}
+                  className="relative flex flex-col gap-3 rounded-2xl border border-gray-200 p-4"
+                >
+                  {!isFlat && fields?.length !== 1 && (
+                    <IconButton
+                      color="primary"
+                      size="small"
+                      className="!absolute !top-2 !right-2"
+                      onClick={() => {
+                        if (el?.id) {
+                          deletedTags.push(el);
+                        }
+                        remove(index);
+                      }}
+                    >
+                      <Remove fontSize="small" />
+                    </IconButton>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1 min-w-0">
+                      <label className={"flex flex-row items-center"}>
+                        Name*{" "}
+                        {isFlat && (
+                          <Tooltip
+                            title={`When the group type is 'flat', a tag is automatically created with the same name as the group.`}
+                          >
+                            <span className={"cursor-pointer"}>
+                              <Info fontSize="small" />
+                            </span>
+                          </Tooltip>
+                        )}
+                      </label>
+                      <Controller
+                        render={({
+                          field: { onChange, value },
+                          fieldState: { error },
+                        }) => (
+                          <FormInput
+                            placeholder="Enter Name"
+                            value={value}
+                            disabled={isFlat}
+                            onChange={(value) => {
+                              onChange(value);
+                              debouncedTagName(value, index);
+                            }}
+                            helperText={error?.message}
+                          />
+                        )}
+                        name={`tags.${[index]}.name`}
+                        control={control}
+                      />
+                    </div>
+                    <div className="w-full sm:w-[240px] shrink-0">
+                      <label htmlFor="icon-input">Icon</label>
+                      <Controller
+                        id="icon-input"
+                        render={({
+                          field: { onChange, value },
+                          fieldState: { error },
+                        }) => (
+                          <FormAvatarEditor
+                            value={value}
+                            name={getValues(`tags.${[index]}.name`)}
+                            onChange={(value) => onChange(value)}
+                            helperText={error?.message}
+                          />
+                        )}
+                        name={`tags.${[index]}.icon`}
+                        control={control}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="w-full">
                     <label className={"flex flex-row items-center"}>
-                      Name*{" "}
-                      {getValues("type")?.enum == "flat" && (
-                        <Tooltip
-                          title={`When the group type is 'flat', a tag is automatically created with the same name as the group.`}
-                        >
-                          <span className={"cursor-pointer"}>
-                            <Info fontSize="small" />
-                          </span>
-                        </Tooltip>
-                      )}
+                      Search Keyword{" "}
+                      <Tooltip
+                        title={
+                          "Alternative search keywords. Type a keyword and press Enter to add it (up to 10)."
+                        }
+                      >
+                        <span className={"cursor-pointer"}>
+                          <Info fontSize="small" />
+                        </span>
+                      </Tooltip>
                     </label>
                     <Controller
                       render={({
                         field: { onChange, value },
                         fieldState: { error },
                       }) => (
-                        <FormInput
-                          placeholder="Enter Name"
+                        <FormChipsInput
+                          placeholder="Type a keyword and press Enter"
                           value={value}
-                          disabled={getValues("type")?.enum == "flat"}
-                          onChange={(value) => {
-                            onChange(value);
-                            debouncedTagName(value, index);
-                          }}
-                          helperText={error?.message}
-                        />
-                      )}
-                      name={`tags.${[index]}.name`}
-                      control={control}
-                    />
-                  </div>
-                  <div className="w-full sm:w-1/2 min-w-0">
-                    <label htmlFor="icon-input">Icon</label>
-                    <Controller
-                      id="icon-input"
-                      render={({
-                        field: { onChange, value },
-                        fieldState: { error },
-                      }) => (
-                        <FormAvatarEditor
-                          value={value}
-                          name={getValues(`tags.${[index]}.name`)}
                           onChange={(value) => onChange(value)}
                           helperText={error?.message}
                         />
                       )}
-                      name={`tags.${[index]}.icon`}
+                      name={`tags.${[index]}.search_keyword`}
                       control={control}
                     />
                   </div>
                 </div>
-                <div className="flex flex-row gap-2 w-[72px] justify-start">
-                  {index === fields?.length - 1 &&
-                  watch("type")?.enum !== "flat" ? (
-                    <>
-                      {fields?.length !== 1 && (
-                        <IconButton
-                          color="primary"
-                          onClick={() => {
-                            if (el?.id) {
-                              deletedTags.push(el);
-                            }
-                            remove(index);
-                          }}
-                        >
-                          <Remove fontSize="small" />
-                        </IconButton>
-                      )}
-                      <IconButton
-                        color="primary"
-                        onClick={() => append({ name: "", icon: null })}
-                      >
-                        <Add fontSize="small" />
-                      </IconButton>
-                    </>
-                  ) : (
-                    <>
-                      {fields?.length !== 1 && (
-                        <IconButton
-                          color="primary"
-                          onClick={() => {
-                            remove(index);
-                            if (el?.id) {
-                              deletedTags.push(el);
-                            }
-                          }}
-                        >
-                          <Remove fontSize="small" />
-                        </IconButton>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          ),
-        )}
+              );
+            },
+          )}
+
+          {watch("type")?.enum !== "flat" && (
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<Add />}
+              className="self-start"
+              onClick={() =>
+                append({ name: "", icon: null, search_keyword: [] })
+              }
+            >
+              Add tag
+            </Button>
+          )}
+        </div>
       </form>
     </Card>
   );

@@ -102,14 +102,18 @@ begin
   where id = p_id;
 
   -- Step 2: Delete tags by IDs
+  -- tag_translation rows are removed via the tag_id FK (cascade) or below.
   if array_length(p_deleted_tag_ids, 1) is not null then
+    delete from tag_translation
+    where tag_id = any(p_deleted_tag_ids);
+
     delete from tag
     where id = any(p_deleted_tag_ids);
   end if;
 
   -- Step 3: Insert new tags
   insert into tag (id, name, icon, tag_group_id, data)
-select 
+select
     (t->>'tag_id')::uuid,  -- id from JSON
     t->>'name',             -- name
     t->>'icon',             -- icon
@@ -121,9 +125,17 @@ select
   update tag
   set
     name = t.value->>'name',
-    icon = t.value->>'icon'
+    icon = t.value->>'icon',
+    data = t.value->'data'   -- JSON object stored in 'data' column (e.g. alternative_country)
   from jsonb_array_elements(p_updated_tags) with ordinality as t(value, idx)
   where tag.id::text = t.value->>'id';
+
+  -- Step 4b: Keep tag_translation in sync for every locale of the updated tags
+  update tag_translation tt
+  set
+    data = t.value->'data'
+  from jsonb_array_elements(p_updated_tags) as t(value)
+  where tt.tag_id::text = t.value->>'id';
 
 end;
 $$;
@@ -377,7 +389,7 @@ begin
     tag->>'name',
     tag->>'icon',
     inserted_group.id,
-    tag->'data'   
+    tag->'data'
     );
   end loop;
 
@@ -416,7 +428,7 @@ begin
     tag->>'name',
     tag->>'icon',
     inserted_group.id,
-    tag->'data'   
+    tag->'data'
     );
   end loop;
 

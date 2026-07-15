@@ -24,7 +24,7 @@ begin
     tag->>'name',
     tag->>'icon',
     inserted_group.id,
-    tag->'data'   
+    tag->'data'
     );
   end loop;
 

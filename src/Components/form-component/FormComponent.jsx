@@ -9,6 +9,7 @@ import {
   Avatar,
   Button,
   CardMedia,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -43,6 +44,9 @@ export const FormInput = (props) => {
     endAdornment,
     value,
     type = "text",
+    multiline = false,
+    minRows,
+    maxRows,
   } = props;
 
   return (
@@ -55,6 +59,9 @@ export const FormInput = (props) => {
       type={type}
       label={label || ""}
       variant={variant}
+      multiline={multiline}
+      minRows={minRows}
+      maxRows={maxRows}
       onChange={(e) => onChange(e.target.value)}
       helperText={helperText}
       disabled={disabled}
@@ -73,6 +80,70 @@ export const FormInput = (props) => {
         },
       }}
       size="small"
+    />
+  );
+};
+
+export const FormChipsInput = (props) => {
+  const {
+    value = [],
+    onChange,
+    placeholder,
+    helperText,
+    disabled,
+  } = props;
+
+  const currentValue = Array.isArray(value) ? value : [];
+  const [inputValue, setInputValue] = useState("");
+
+  const commit = (raw) => {
+    // Split on commas (handles pasting "a, b, c"), trim, drop empties, dedupe.
+    const cleaned = raw
+      .flatMap((el) => (typeof el === "string" ? el.split(",") : el))
+      .map((el) => el.trim())
+      .filter(Boolean);
+    onChange([...new Set(cleaned)]);
+  };
+
+  return (
+    <Autocomplete
+      multiple
+      freeSolo
+      size="small"
+      fullWidth
+      disabled={disabled}
+      options={[]}
+      value={currentValue}
+      inputValue={inputValue}
+      onInputChange={(event, newInputValue) => {
+        // A comma acts as a delimiter: commit what's typed so far and clear.
+        if (newInputValue.includes(",")) {
+          commit([...currentValue, newInputValue]);
+          setInputValue("");
+        } else {
+          setInputValue(newInputValue);
+        }
+      }}
+      onChange={(event, newValue) => {
+        // Fires on Enter (add) and chip deletion.
+        commit(newValue);
+        setInputValue("");
+      }}
+      renderTags={(tags, getTagProps) =>
+        tags.map((option, index) => {
+          const { key, ...tagProps } = getTagProps({ index });
+          return (
+            <Chip size="small" label={option} key={key} {...tagProps} />
+          );
+        })
+      }
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          placeholder={currentValue.length === 0 ? placeholder : ""}
+          helperText={helperText}
+        />
+      )}
     />
   );
 };

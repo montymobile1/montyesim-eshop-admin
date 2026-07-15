@@ -2,6 +2,13 @@ import { api } from "./apiInstance";
 import { deleteImageFromSupabase, uploadImage } from "./mediaAPI";
 import supabase from "./supabase";
 
+// Normalizes alternative_country into a comma-separated string, or null when empty.
+const toAlternativeCountry = (value, country) => {
+  console.log(value, "valueeeee", country);
+  const str = Array.isArray(value) ? value.join(",") : value;
+  return str?.length ? str : null;
+};
+
 export const getAllGroups = async (page, pageSize, name, async = false) => {
   const from = async ? (page - 1) * pageSize : page * pageSize;
   const to = from + pageSize - 1;
@@ -141,8 +148,9 @@ export const addGroup = async (payload) => {
                 import.meta.env.VITE_SUPABASE_URL
               }/storage/v1/object/public/media/${res.data.path}`
             : null,
-          ...(groupPayload?.name?.toLowerCase() == "regions" && {
-            data: {
+          data: {
+            ...(el?.data || {}),
+            ...(groupPayload?.name?.toLowerCase() == "regions" && {
               guid: res?.data?.generatedUUID,
               icon: res?.data?.path
                 ? `${
@@ -152,8 +160,9 @@ export const addGroup = async (payload) => {
               zone_name: encodeURIComponent(el?.name),
               region_code: encodeURIComponent(el?.name)?.split(" ").join("_"),
               region_name: encodeURIComponent(el?.name),
-            },
-          }),
+            }),
+            alternative_country: toAlternativeCountry(el?.alternative_country),
+          },
         };
       } catch (error) {
         return { ...el, error: { message: "Upload failed" } };
@@ -163,15 +172,17 @@ export const addGroup = async (payload) => {
       return {
         ...el,
         id: uuid,
-        ...(groupPayload?.name?.toLowerCase() === "regions" && {
-          data: {
+        data: {
+          ...(el?.data || {}),
+          ...(groupPayload?.name?.toLowerCase() === "regions" && {
             guid: uuid,
             icon: null,
             zone_name: encodeURIComponent(el?.name),
             region_code: encodeURIComponent(el?.name)?.split(" ").join("_"),
             region_name: encodeURIComponent(el?.name),
-          },
-        }),
+          }),
+          alternative_country: toAlternativeCountry(el?.alternative_country),
+        },
       };
     }
   });
@@ -208,6 +219,21 @@ export const addGroup = async (payload) => {
 
   if (rpcRes?.error) {
     await cleanupTagUploadedIcons(tagsWithUploadedIcons);
+  } else {
+    // Refresh the app cache key so clients pick up the new group/tags
+    const { error: appConfigError } = await supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "APP_CACHE_KEY")
+      .single();
+
+    if (!appConfigError) {
+      const newUuid = crypto.randomUUID();
+      await supabase
+        .from("app_config")
+        .update({ value: newUuid })
+        .eq("key", "APP_CACHE_KEY");
+    }
   }
   return rpcRes;
 };
@@ -313,15 +339,20 @@ we need to clean up any uploaded icons for tags that were uploaded successfully.
               ...tag,
               tag_id: tag?.id || res?.data?.generatedUUID,
               icon: publicUrl,
-              ...(groupPayload?.name?.toLowerCase() == "regions" && {
-                data: {
+              data: {
+                ...(tag?.data || {}),
+                ...(groupPayload?.name?.toLowerCase() == "regions" && {
                   guid: tag?.id || res?.data?.generatedUUID,
                   icon: publicUrl,
                   zone_name: tag?.name,
                   region_code: tag?.name?.split(" ").join("_"),
                   region_name: tag?.name,
-                },
-              }),
+                }),
+                alternative_country: toAlternativeCountry(
+                  tag?.alternative_country,
+                  tag?.data?.country,
+                ),
+              },
             };
           }
         } else {
@@ -337,15 +368,17 @@ we need to clean up any uploaded icons for tags that were uploaded successfully.
         ...tag,
         tag_id: tag?.id || uuid,
         icon: tag?.icon || null,
-        ...(groupPayload?.name?.toLowerCase() == "regions" && {
-          data: {
+        data: {
+          ...(tag?.data || {}),
+          ...(groupPayload?.name?.toLowerCase() == "regions" && {
             guid: tag?.id || uuid,
             icon: tag?.icon || null,
             zone_name: tag?.name,
             region_code: tag?.name?.split(" ").join("_"),
             region_name: tag?.name,
-          },
-        }),
+          }),
+          alternative_country: toAlternativeCountry(tag?.alternative_country),
+        },
       };
     }),
   );
@@ -379,6 +412,21 @@ we need to clean up any uploaded icons for tags that were uploaded successfully.
 
   // 3. Cleanup deleted tag icons (after successful RPC)
   await cleanupTagUploadedIcons(deletedTags);
+
+  // 4. Refresh the app cache key so clients pick up the edited group/tags
+  const { error: appConfigError } = await supabase
+    .from("app_config")
+    .select("value")
+    .eq("key", "APP_CACHE_KEY")
+    .single();
+
+  if (!appConfigError) {
+    const newUuid = crypto.randomUUID();
+    await supabase
+      .from("app_config")
+      .update({ value: newUuid })
+      .eq("key", "APP_CACHE_KEY");
+  }
 
   return rpcRes;
 };

@@ -8,7 +8,7 @@ export const addTags = async (payload) => {
       let query = supabase.from("tag").insert(
         payload?.tagsWithUploadedIcons?.map((el) => {
           return { ...el, tag_group_id: payload?.group_id };
-        })
+        }),
       );
       return query;
     });
@@ -25,7 +25,7 @@ export const upsertTag = async (payload) => {
       let query = supabase.from("tag").upsert(
         payload?.tagsWithUploadedIcons?.map((el) => {
           return { ...el, tag_group_id: Number.parseInt(payload?.group_id) };
-        })
+        }),
       );
       return query;
     });

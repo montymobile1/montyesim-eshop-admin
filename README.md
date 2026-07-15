@@ -75,3 +75,18 @@ For styling, we use **Tailwind CSS V4** (without `tailwind.config.js`) along wit
 ## Queries
 
 Some database operations and constraints are implemented using **RPC** (remote procedure calls). This approach is necessary because Supabase does not support client-side transaction rollbacks. To address this, we’ve written SQL scripts in the Supabase SQL Editor to handle rollbacks for most queries. However, **Supabase Storage** currently does not support transactional rollbacks, so we handle any necessary cleanup manually when required.
+
+## **Admin settings Variables**
+
+Admin variables are the one needed to be set inside the admin portal within settings
+
+```bash
+    TOP_COUNTRIES_COUNT=number | number of countries to be shown before view more in plans page
+    COMPANY_SUPPORT_PHONE=string | footer support phone
+    COMPANY_SUPPORT_EMAIL=string | footer support email
+    WHATSAPP_NUMBER=string | whatsapp support number if available
+    transaction_expiry_time=number | expiration time in dcb checkout
+    OTP_EXPIRATION_TIME=number | otp default expiration time
+    allowed_payment_types=strings seperated by comma | ex:Card,Wallet | options : Card , Wallet , DCB
+    login_type=string | options listed in static variables
+```
