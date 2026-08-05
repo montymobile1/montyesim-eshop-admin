@@ -2,7 +2,7 @@
 
 ## **Introduction**
 
-**Subscribe Open Source** is a modern web application built using the following technologies:
+**Admin Open Source** is a modern web application built using the following technologies:
 
 - **React** – A JavaScript library for building interactive user interfaces.
 - **Vite** – A fast and lightweight build tool and development server that enhances React performance.
@@ -56,7 +56,7 @@ Please ensure the following environment variables are defined in your .env file 
 
 ```bash
     VITE_SUPABASE_URL=your-supabase-url
-    VITE_SUPABASE_KEY=your-supabase-key
+    VITE_SUPABASE_KEY=your-supabase-key (service role key: the ban / unban user action calls auth.admin.updateUserById, which an anon key is not allowed to use)
     VITE_CURRENCY_DEFAULT=system default currency ex:"USD"
     VITE_APP_REFER_AND_EARN=declare if refer and earn feature is enabled ex :TRUE
     VITE_APP_VOUCHER_CODE=declare if voucher feature is enabled ex :TRUE

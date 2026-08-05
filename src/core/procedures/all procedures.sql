@@ -504,3 +504,243 @@ CREATE TRIGGER validate_bundle_codes_promo_trigger
 BEFORE INSERT OR UPDATE ON promotion
 FOR EACH ROW
 EXECUTE FUNCTION validate_bundle_codes();
+
+
+/*
+  # Activate All Bundles  (TEOS-64)
+
+  1. Function Purpose
+     - Atomically sets is_active = TRUE on every bundle that is not active
+     - Already active bundles are left untouched
+     - Returns only the affected ids plus the before/after status, which is all
+       the caller needs to write a compact audit_log entry
+
+  2. Parameters
+     - None. Unlike the deactivation, the reason is optional here, so there is
+       nothing to validate; the reason is stored in audit_log by the caller
+       (src/core/apis/bundlesAPI.jsx)
+
+  3. Return Value
+     - Success : { "success": true, "rows_affected": <int>,
+                   "affected_bundle_ids": [...],
+                   "old_status": "inactive", "new_status": "active",
+                   "message": "..." }
+     - No-op   : { "success": false, "rows_affected": 0,
+                   "message": "All bundles are already active." }
+     - Failure : { "error": "..." }  -- surfaced by src/core/apis/apiInstance.jsx
+
+  4. Notes
+     - SECURITY INVOKER (default): runs with the caller's rights and respects RLS
+     - Authorization (super admin only), the audit_log entry and the
+       APP_CACHE_KEY rotation are handled on the client side
+     - A single bundle is toggled straight through supabase from the client
+       (toggleBundleStatus in src/core/apis/bundlesAPI.jsx), no procedure needed
+*/
+
+CREATE OR REPLACE FUNCTION activate_all_bundles()
+RETURNS JSON
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_ids   JSONB;
+  v_count INTEGER;
+BEGIN
+  -- IS NOT TRUE also picks up bundles whose is_active was never set.
+  WITH updated AS (
+    UPDATE public.bundle
+       SET is_active = TRUE
+     WHERE is_active IS NOT TRUE
+    RETURNING id
+  )
+  SELECT
+    COALESCE(jsonb_agg(id ORDER BY id), '[]'::jsonb),
+    COUNT(*)::int
+  INTO v_ids, v_count
+  FROM updated;
+
+  IF v_count = 0 THEN
+    RETURN json_build_object(
+      'success',       FALSE,
+      'rows_affected', 0,
+      'message',       'All bundles are already active.'
+    );
+  END IF;
+
+  RETURN json_build_object(
+    'success',             TRUE,
+    'rows_affected',       v_count,
+    'affected_bundle_ids', v_ids,
+    'old_status',          'inactive',
+    'new_status',          'active',
+    'message',             format(
+      'All bundles have been successfully activated. %s bundle(s) affected.',
+      v_count
+    )
+  );
+
+exception
+  when others then
+    raise notice 'Rollback due to error: %', sqlerrm;
+    -- No need for explicit ROLLBACK; PostgreSQL will auto-rollback the function on exception
+    return json_build_object('error', sqlerrm);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION activate_all_bundles() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION activate_all_bundles() TO authenticated;
+
+
+/*
+  # Deactivate All Bundles  (TEOS-64)
+
+  1. Function Purpose
+     - Atomically sets is_active = FALSE on every currently active bundle
+     - Already inactive bundles are left untouched
+     - Returns only the affected ids plus the before/after status, which is all
+       the caller needs to write a compact audit_log entry
+
+  2. Parameters
+     - p_reason: Mandatory reason, cannot be only spaces. Validated here as a
+       backstop for the UI rule; the reason itself is stored in audit_log by
+       the caller (src/core/apis/bundlesAPI.jsx)
+
+  3. Return Value
+     - Success : { "success": true, "rows_affected": <int>,
+                   "affected_bundle_ids": [...],
+                   "old_status": "active", "new_status": "inactive",
+                   "message": "..." }
+     - No-op   : { "success": false, "rows_affected": 0, "message": "..." }
+     - Failure : { "error": "..." }  -- surfaced by src/core/apis/apiInstance.jsx
+
+  4. Notes
+     - SECURITY INVOKER (default): runs with the caller's rights and respects RLS
+     - Authorization (super admin only), the audit_log entry and the
+       APP_CACHE_KEY rotation are handled on the client side
+*/
+
+CREATE OR REPLACE FUNCTION deactivate_all_bundles(p_reason TEXT)
+RETURNS JSON
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_reason TEXT := btrim(COALESCE(p_reason, ''));
+  v_ids    JSONB;
+  v_count  INTEGER;
+BEGIN
+  IF v_reason = '' THEN
+    RETURN json_build_object(
+      'error', 'A reason is required to deactivate all bundles.'
+    );
+  END IF;
+
+  -- The WHERE clause is what keeps already inactive bundles unchanged.
+  WITH updated AS (
+    UPDATE public.bundle
+       SET is_active = FALSE
+     WHERE is_active IS TRUE
+    RETURNING id
+  )
+  SELECT
+    COALESCE(jsonb_agg(id ORDER BY id), '[]'::jsonb),
+    COUNT(*)::int
+  INTO v_ids, v_count
+  FROM updated;
+
+  IF v_count = 0 THEN
+    RETURN json_build_object(
+      'success',       FALSE,
+      'rows_affected', 0,
+      'message',       'All bundles are already inactive.'
+    );
+  END IF;
+
+  RETURN json_build_object(
+    'success',             TRUE,
+    'rows_affected',       v_count,
+    'affected_bundle_ids', v_ids,
+    'old_status',          'active',
+    'new_status',          'inactive',
+    'message',             format(
+      'All active bundles have been successfully deactivated. %s bundle(s) affected.',
+      v_count
+    )
+  );
+
+exception
+  when others then
+    raise notice 'Rollback due to error: %', sqlerrm;
+    -- No need for explicit ROLLBACK; PostgreSQL will auto-rollback the function on exception
+    return json_build_object('error', sqlerrm);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION deactivate_all_bundles(TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION deactivate_all_bundles(TEXT) TO authenticated;
+
+
+/*
+  # Client IP Address  (TEOS-64)
+
+  1. Function Purpose
+     - Resolves the IP address of the caller so audit_log entries can record it
+     - The browser cannot read its own public IP, but PostgREST exposes the
+       incoming request headers, so the value is read server side instead
+
+  2. Parameters
+     - None
+
+  3. Return Value
+     - The client IP as text, or NULL when it cannot be determined.
+       NULL is a valid answer: AC6 asks for the IP "when available"
+
+  4. Resolution Order
+     - cf-connecting-ip, then x-real-ip, then the first entry of
+       x-forwarded-for, then the raw connection address
+*/
+
+CREATE OR REPLACE FUNCTION get_client_ip_address()
+RETURNS TEXT
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+  v_headers JSONB;
+  v_ip      TEXT;
+BEGIN
+  v_headers := NULLIF(current_setting('request.headers', TRUE), '')::jsonb;
+
+  v_ip := COALESCE(
+    v_headers ->> 'cf-connecting-ip',
+    v_headers ->> 'x-real-ip',
+    NULLIF(split_part(COALESCE(v_headers ->> 'x-forwarded-for', ''), ',', 1), '')
+  );
+
+  v_ip := NULLIF(btrim(COALESCE(v_ip, '')), '');
+
+  RETURN COALESCE(v_ip, host(inet_client_addr()));
+
+exception
+  when others then
+    -- Never let IP resolution break the operation being audited.
+    return null;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION get_client_ip_address() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION get_client_ip_address() TO authenticated;
+
+
+/*
+  # audit_log.operation_details  (TEOS-64)
+
+  Adds the column the bulk bundle actions use to store the extra context of an
+  operation, next to the existing old_data / new_data columns.
+
+  Written by src/core/apis/bundlesAPI.jsx as, for example:
+    { "reason": "...", "ip_address": "1.2.3.4", "rows_affected": 12 }
+
+  Idempotent - safe to re-run.
+*/
+
+ALTER TABLE public.audit_log
+  ADD COLUMN IF NOT EXISTS operation_details JSONB;

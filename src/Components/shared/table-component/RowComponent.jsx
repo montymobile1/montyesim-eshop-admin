@@ -25,6 +25,8 @@ export function RowComponent(props) {
     collapseComponent,
     colSpan,
     openCollapse,
+    // Page specific buttons, rendered in the actions cell next to the eye icon.
+    extraActions,
   } = props;
   //VARIABLES
 
@@ -87,6 +89,8 @@ export function RowComponent(props) {
                 </IconButton>
               </Tooltip>
             )}
+
+            {extraActions}
 
             {onView && (
               <Tooltip title={"View Detail"} placement={"top"}>

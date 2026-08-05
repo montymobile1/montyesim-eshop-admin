@@ -9,12 +9,18 @@ import React, { Suspense } from "react";
 import localizedFormat from "dayjs/plugin/localizedFormat";
 import relativeTime from "dayjs/plugin/relativeTime";
 import advancedFormat from "dayjs/plugin/advancedFormat";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import dayjs from "dayjs";
 import App from "./App";
 
 dayjs.extend(advancedFormat);
 dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
+// dayjs is a single shared instance, so extending it here is enough for
+// dayjs.utc() / .tz() / .local() to work in every component of the app.
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 createRoot(document.getElementById("root")).render(
   <Provider store={store}>

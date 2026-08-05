@@ -9,6 +9,26 @@ const toAlternativeCountry = (value, country) => {
   return str?.length ? str : null;
 };
 
+/* EXPLANATION:
+Countries synced from the provider carry a full `data` payload
+(id / icon / country / iso3_code / zone_name / country_code / operator_list).
+A country added from this admin has no such source, so we build the same shape
+here — deriving the codes from the tag name (spaces -> underscores) the same way
+the "regions" branch derives region_code. */
+const buildCountryData = (name, id, icon) => {
+  const code = name ? name.split(" ").join("_") : null;
+
+  return {
+    id: id || null,
+    icon: icon || null,
+    country: name || null,
+    iso3_code: code,
+    zone_name: "Unknown",
+    country_code: code,
+    operator_list: null,
+  };
+};
+
 export const getAllGroups = async (page, pageSize, name, async = false) => {
   const from = async ? (page - 1) * pageSize : page * pageSize;
   const to = from + pageSize - 1;
@@ -140,27 +160,27 @@ export const addGroup = async (payload) => {
 
         if (res?.error) return { ...el, error: res };
 
+        const publicUrl = res?.data?.path
+          ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/media/${
+              res.data.path
+            }`
+          : null;
+
         return {
           ...el,
           id: res?.data?.generatedUUID,
-          icon: res?.data?.path
-            ? `${
-                import.meta.env.VITE_SUPABASE_URL
-              }/storage/v1/object/public/media/${res.data.path}`
-            : null,
+          icon: publicUrl,
           data: {
             ...(el?.data || {}),
             ...(groupPayload?.name?.toLowerCase() == "regions" && {
               guid: res?.data?.generatedUUID,
-              icon: res?.data?.path
-                ? `${
-                    import.meta.env.VITE_SUPABASE_URL
-                  }/storage/v1/object/public/media/${res.data.path}`
-                : null,
+              icon: publicUrl,
               zone_name: encodeURIComponent(el?.name),
               region_code: encodeURIComponent(el?.name)?.split(" ").join("_"),
               region_name: encodeURIComponent(el?.name),
             }),
+            ...(groupPayload?.name?.toLowerCase() == "countries" &&
+              buildCountryData(el?.name, res?.data?.generatedUUID, publicUrl)),
             alternative_country: toAlternativeCountry(el?.alternative_country),
           },
         };
@@ -181,6 +201,8 @@ export const addGroup = async (payload) => {
             region_code: encodeURIComponent(el?.name)?.split(" ").join("_"),
             region_name: encodeURIComponent(el?.name),
           }),
+          ...(groupPayload?.name?.toLowerCase() === "countries" &&
+            buildCountryData(el?.name, uuid, null)),
           alternative_country: toAlternativeCountry(el?.alternative_country),
         },
       };
@@ -348,6 +370,15 @@ we need to clean up any uploaded icons for tags that were uploaded successfully.
                   region_code: tag?.name?.split(" ").join("_"),
                   region_name: tag?.name,
                 }),
+                // Only for tags created here — an existing country already has
+                // its synced data and must not be overwritten with derived codes.
+                ...(!tag?.id &&
+                  groupPayload?.name?.toLowerCase() == "countries" &&
+                  buildCountryData(
+                    tag?.name,
+                    res?.data?.generatedUUID,
+                    publicUrl,
+                  )),
                 alternative_country: toAlternativeCountry(
                   tag?.alternative_country,
                   tag?.data?.country,
@@ -377,6 +408,11 @@ we need to clean up any uploaded icons for tags that were uploaded successfully.
             region_code: tag?.name?.split(" ").join("_"),
             region_name: tag?.name,
           }),
+          // Only for tags created here — an existing country already has
+          // its synced data and must not be overwritten with derived codes.
+          ...(!tag?.id &&
+            groupPayload?.name?.toLowerCase() == "countries" &&
+            buildCountryData(tag?.name, uuid, tag?.icon || null)),
           alternative_country: toAlternativeCountry(tag?.alternative_country),
         },
       };

@@ -237,4 +237,23 @@ export const MenuRoutes = [
     ],
     children: [],
   },
+  {
+    parentName: null,
+    parentGuid: null,
+    displayOrder: 10,
+    uri: "audit-log",
+    iconUri: "fa-clipboard-list",
+    recordGuid: "14",
+    position: 100,
+    group: 1,
+    superAdminAccess: true,
+    menuDetail: [
+      {
+        name: "Audit Log",
+        description: "Audit Log",
+        languageCode: "en",
+      },
+    ],
+    children: [],
+  },
 ];

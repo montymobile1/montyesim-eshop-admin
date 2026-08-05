@@ -1,6 +1,7 @@
 //COMPONENTS
 import PageNotFound from "../../Components/shared/fallbacks/page-not-found/PageNotFound";
 import AssignBundleToGroups from "../../pages/AssignBundleToGroups/AssignBundleToGroups";
+import AuditLogPage from "../../pages/audit-log/AuditLogPage";
 import SignInPage from "../../pages/authentication/SignInPage";
 import BundlesList from "../../pages/bundles/BundlesList";
 import ContactusPage from "../../pages/contact-us/ContactusPage";
@@ -168,6 +169,14 @@ export const privateRoutes = [
         key: "/settings/logs",
         name: "Settings Logs",
         regex: "^/settings/logs/?$",
+        superAdminAccess: true,
+      },
+      {
+        path: "/audit-log",
+        element: <AuditLogPage />,
+        key: "/audit-log",
+        name: "Audit Log",
+        regex: "^/audit-log/?$",
         superAdminAccess: true,
       },
 
