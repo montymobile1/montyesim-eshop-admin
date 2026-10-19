@@ -1,10 +1,20 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Button, Card, IconButton, InputLabel } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  IconButton,
+  InputLabel,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import { useEffect, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import TuneIcon from "@mui/icons-material/Tune";
 import { toast } from "react-toastify";
 import * as yup from "yup";
 import { FormInput } from "../../Components/form-component/FormComponent";
@@ -43,6 +53,7 @@ const schema = yup.object().shape({
 
 const EditSettings = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
   const user = useSelector((state) => state.authentication);
 
   const [deletedItems, setDeletedItems] = useState([]);
@@ -63,7 +74,7 @@ const EditSettings = () => {
     mode: "all",
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, prepend, remove } = useFieldArray({
     control,
     name: "settings",
   });
@@ -127,6 +138,10 @@ const EditSettings = () => {
     setConfirmOpen(true);
   });
 
+  // New rows go on top so they show up right under the header, no scrolling
+  // down a long list to reach them.
+  const addSetting = () => prepend({ key: "", value: "" });
+
   if (loading) {
     return <FormsSkeletons />;
   }
@@ -144,11 +159,28 @@ const EditSettings = () => {
         }}
       >
         <div className="flex flex-col gap-[1rem]">
-          <div className={"flex flex-row justify-between"}>
+          <div
+            className={
+              "flex flex-row flex-wrap justify-between items-center gap-[0.5rem]"
+            }
+          >
             <h1>{fields?.length} Configured Settings</h1>
             <div
-              className={"flex flex-row gap-[0.5rem] justify-end items-center"}
+              className={
+                "flex flex-row flex-wrap gap-[0.5rem] justify-end items-center"
+              }
             >
+              {fields?.length > 0 && (
+                <Button
+                  variant={"outlined"}
+                  color="primary"
+                  type={"button"}
+                  startIcon={<AddIcon />}
+                  onClick={addSetting}
+                >
+                  Add Setting
+                </Button>
+              )}
               <Button
                 variant={"contained"}
                 color="secondary"
@@ -178,6 +210,37 @@ const EditSettings = () => {
               </Button>
             </div>
           </div>
+
+          {fields?.length === 0 && (
+            <div className="flex flex-col items-center justify-center text-center gap-3 py-16">
+              <Box
+                className="flex items-center justify-center w-14 h-14 rounded-2xl"
+                sx={{
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                  color: theme.palette.primary.main,
+                }}
+              >
+                <TuneIcon />
+              </Box>
+              <div className="flex flex-col gap-1">
+                <Typography variant="h6" component="p" fontWeight={700}>
+                  No settings yet
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Start by adding your first setting key and value.
+                </Typography>
+              </div>
+              <Button
+                variant={"contained"}
+                color="primary"
+                type={"button"}
+                startIcon={<AddIcon />}
+                onClick={addSetting}
+              >
+                Add Setting
+              </Button>
+            </div>
+          )}
 
           {fields?.map((item, index) => (
             <div
@@ -217,33 +280,27 @@ const EditSettings = () => {
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-row  justify-center items-center w-[60px]">
-                {/* Add Button (only functional for first row) */}
-                {index == fields?.length - 1 && (
-                  <IconButton
-                    color="primary"
-                    size="small"
-                    onClick={() => append({ key: "", value: "" })}
-                  >
-                    <AddIcon fontSize="small" />
-                  </IconButton>
-                )}
-                {/* Remove Button */}
-                <IconButton
-                  color="error"
-                  size="small"
-                  onClick={() => {
-                    if (item?.created_at) {
-                      setDeletedItems([...deletedItems, item?.key]);
-                    }
+              {/* Remove Button */}
+              <div className="flex flex-row justify-center items-center w-[40px] mt-6">
+                <Tooltip title="Remove" placement="top">
+                  <span>
+                    <IconButton
+                      color="error"
+                      size="small"
+                      aria-label="remove setting"
+                      onClick={() => {
+                        if (item?.created_at) {
+                          setDeletedItems([...deletedItems, item?.key]);
+                        }
 
-                    remove(index);
-                  }}
-                  disabled={fields.length === 1}
-                >
-                  <RemoveIcon fontSize="small" />
-                </IconButton>
+                        remove(index);
+                      }}
+                      disabled={fields.length === 1}
+                    >
+                      <RemoveIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
               </div>
             </div>
           ))}

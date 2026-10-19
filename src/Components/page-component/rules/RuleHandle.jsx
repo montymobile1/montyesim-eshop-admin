@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Close } from "@mui/icons-material";
-import { Button, Dialog, DialogContent, IconButton } from "@mui/material";
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogContent,
+  IconButton,
+} from "@mui/material";
 import {
   FormDropdownList,
   FormInput,
 } from "../../form-component/FormComponent";
 import * as yup from "yup";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { beneficiaryData } from "../../../core/vairables/EnumData";
 import {
@@ -50,6 +56,14 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
     resolver: yupResolver(validationSchema),
     mode: "all",
   });
+
+  const selectedAction = useWatch({
+    control,
+    name: "promotion_rule_action_id",
+  });
+  const isCashbackAction = selectedAction?.name
+    ?.toLowerCase()
+    ?.includes("cashback");
 
   const getActionsData = () => {
     getAllActions().then((res) => {
@@ -227,6 +241,14 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
               />
             </div>
           </div>
+
+          {isCashbackAction && (
+            <Alert severity="info">
+              {
+                "Cashback is credited to the customer's Monty Wallet. If your app doesn't support Monty Wallet, customers won't be able to receive or use their cashback."
+              }
+            </Alert>
+          )}
 
           <div
             className={"flex flex-row gap-[0.5rem] justify-end items-center"}

@@ -1,5 +1,6 @@
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import {
+  alpha,
   Box,
   Collapse,
   ListItemButton,
@@ -30,7 +31,7 @@ const MenuItems = ({
   };
 
   return (
-    <div key={item.key} style={{ marginLeft: level * 20 }}>
+    <div style={{ marginLeft: level * 20 }}>
       <ListItemButton
         onClick={handleClick}
         to={isClickable ? `/${item.uri}` : undefined}
@@ -41,7 +42,19 @@ const MenuItems = ({
             ? theme.palette.secondary.main
             : theme.palette.primary.main,
           ...getStyles(level),
-          marginBottom: "1px",
+          width: "auto",
+          marginX: "10px",
+          marginBottom: "2px",
+          backgroundColor:
+            IsActive(item) && isClickable
+              ? alpha(theme.palette.secondary.main, 0.08)
+              : "transparent",
+          "&:hover": {
+            backgroundColor:
+              IsActive(item) && isClickable
+                ? alpha(theme.palette.secondary.main, 0.12)
+                : alpha(theme.palette.primary.main, 0.05),
+          },
           display: "flex",
           alignItems: "center",
           fontSize: getFontSize(level),
@@ -75,7 +88,7 @@ const MenuItems = ({
 
         {open &&
           hasChildren &&
-          (openMenus[item.key] ? <ExpandLess /> : <ExpandMore />)}
+          (openMenus[item.recordGuid] ? <ExpandLess /> : <ExpandMore />)}
       </ListItemButton>
 
       {hasChildren && (

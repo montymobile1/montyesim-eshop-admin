@@ -1,11 +1,29 @@
+import { alpha } from "@mui/system";
+
 export const InputTheme = ({ theme }) => {
   return {
     styleOverrides: {
       root: {
-        borderRadius: "8px",
         "& .MuiOutlinedInput-root": {
           backgroundColor: theme.palette.background.paper,
-          borderRadius: "16px",
+          borderRadius: "10px",
+          transition: "box-shadow 0.2s ease",
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderColor: theme.palette.divider,
+          },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: alpha(theme.palette.primary.main, 0.4),
+          },
+          "&.Mui-focused": {
+            boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`,
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: theme.palette.primary.main,
+            borderWidth: "1px",
+          },
+          "&.Mui-disabled": {
+            backgroundColor: theme.palette.background.default,
+          },
         },
         "& .MuiInputLabel-root": {
           fontWeight: 500,

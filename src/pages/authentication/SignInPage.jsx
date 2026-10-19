@@ -1,6 +1,14 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Lock as LockIcon, Person } from "@mui/icons-material";
-import { Button, Card, CardContent, Typography } from "@mui/material";
+import { LockOutlined, MailOutline } from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Typography,
+} from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
@@ -21,6 +29,7 @@ const validationSchema = Yup.object({
 
 export default function SignInPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
 
@@ -65,57 +74,98 @@ export default function SignInPage() {
   };
 
   return (
-    <div
-      className={"flex items-center justify-center min-h-[calc(100vh-180px)]"}
-    >
-      <Card sx={{ maxWidth: "400px" }}>
-        <CardContent className={"flex flex-col gap-[0.5rem]"}>
-          <Typography variant="h4" gutterBottom align="center">
-            Sign In
-          </Typography>
+    <Box className="flex items-center justify-center min-h-[calc(100vh-180px)] px-4">
+      <Card
+        elevation={0}
+        sx={{
+          width: "100%",
+          maxWidth: 420,
+          border: `1px solid ${theme.palette.divider}`,
+          boxShadow: `0 20px 45px -20px ${alpha(
+            theme.palette.primary.main,
+            0.25
+          )}`,
+        }}
+      >
+        <CardContent
+          className="flex flex-col gap-6"
+          sx={{ p: { xs: 3, sm: 5 }, "&:last-child": { pb: { xs: 3, sm: 5 } } }}
+        >
+          <div className="flex flex-col items-center gap-3 text-center">
+            <Box
+              className="flex items-center justify-center w-14 h-14 rounded-2xl"
+              sx={{
+                backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                color: theme.palette.primary.main,
+              }}
+            >
+              <LockOutlined fontSize="medium" />
+            </Box>
+            <div className="flex flex-col gap-1">
+              <Typography variant="h5" component="h1" fontWeight={700}>
+                Welcome back
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Sign in to continue to your dashboard
+              </Typography>
+            </div>
+          </div>
+
           <form
-            className="flex flex-col gap-[1rem]"
+            className="flex flex-col gap-5"
             onSubmit={handleSubmit(handleSubmitForm)}
+            noValidate
           >
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2">
+            <div className="flex flex-col gap-1.5">
+              <Typography
+                component="label"
+                htmlFor="email"
+                variant="body2"
+                fontWeight={600}
+              >
                 Email
-              </label>
+              </Typography>
               <Controller
                 render={({
                   field: { onChange, value },
                   fieldState: { error },
                 }) => (
                   <FormInput
-                    placeholder={"Enter email"}
+                    placeholder={"you@example.com"}
                     value={value}
                     helperText={error?.message}
                     onChange={(value) => onChange(value)}
-                    startAdornment={<Person />}
+                    startAdornment={
+                      <MailOutline fontSize="small" sx={{ color: "text.secondary" }} />
+                    }
                   />
                 )}
                 name="email"
                 control={control}
               />
             </div>
-            <div>
-              <label
+            <div className="flex flex-col gap-1.5">
+              <Typography
+                component="label"
                 htmlFor="password"
-                className="block text-sm font-medium mb-2"
+                variant="body2"
+                fontWeight={600}
               >
                 Password
-              </label>
+              </Typography>
               <Controller
                 render={({
                   field: { onChange, value },
                   fieldState: { error },
                 }) => (
                   <FormPassword
-                    placeholder={"Enter password"}
+                    placeholder={"Enter your password"}
                     value={value}
                     helperText={error?.message}
                     onChange={(value) => onChange(value)}
-                    startAdornment={<LockIcon />}
+                    startAdornment={
+                      <LockOutlined fontSize="small" sx={{ color: "text.secondary" }} />
+                    }
                   />
                 )}
                 name="password"
@@ -126,13 +176,35 @@ export default function SignInPage() {
               variant={"contained"}
               color="primary"
               type="submit"
+              size="large"
+              fullWidth
               disabled={loading}
+              aria-label="Sign In"
+              startIcon={
+                loading ? <CircularProgress size={18} color="inherit" /> : null
+              }
+              sx={{
+                mt: 1,
+                py: 1.25,
+                "&:hover": {
+                  backgroundColor: theme.palette.primary.main,
+                  boxShadow: `0 8px 20px -6px ${alpha(
+                    theme.palette.primary.main,
+                    0.5
+                  )}`,
+                  transform: "translateY(-1px)",
+                },
+                "&.Mui-disabled": {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.6),
+                  color: theme.palette.primary.contrastText,
+                },
+              }}
             >
-              {loading ? "Loading..." : "Sign In"}
+              {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
         </CardContent>
       </Card>
-    </div>
+    </Box>
   );
 }

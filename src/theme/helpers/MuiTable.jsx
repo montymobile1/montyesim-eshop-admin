@@ -1,3 +1,5 @@
+import { alpha } from "@mui/system";
+
 export const TableTheme = ({ theme }) => {
   return {
     MuiTableContainer: {
@@ -6,6 +8,7 @@ export const TableTheme = ({ theme }) => {
           minHeight: "400px",
           backgroundColor: theme.palette.background.paper,
           borderRadius: "12px",
+          border: `1px solid ${theme.palette.divider}`,
         },
       },
     },
@@ -19,31 +22,49 @@ export const TableTheme = ({ theme }) => {
     MuiTableCell: {
       styleOverrides: {
         root: {
-          padding: "10px !important",
-          borderBottom: "none",
+          padding: "12px 16px !important",
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          fontSize: "0.875rem",
         },
         head: {
           fontWeight: 600,
-          color: theme.palette.text.primary,
+          fontSize: "0.75rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+          color: theme.palette.text.secondary,
           backgroundColor: theme.palette.background.default,
-          "&:first-of-type": {
-            borderTopLeftRadius: "16px",
-          },
-          "&:last-of-type": {
-            borderTopRightRadius: "16px",
-          },
+          whiteSpace: "nowrap",
         },
       },
     },
     MuiTableRow: {
       styleOverrides: {
         root: {
-          "&:nth-of-type(even)": {
-            backgroundColor: theme.palette.background.default,
+          backgroundColor: theme.palette.background.paper,
+          transition: "background-color 0.15s ease",
+          "&:last-of-type td": {
+            borderBottom: "none",
           },
-          "&:nth-of-type(odd)": {
-            backgroundColor: "#ffffff",
+          "&.MuiTableRow-hover:hover, &.tableRow:hover": {
+            backgroundColor: alpha(theme.palette.primary.main, 0.03),
           },
+        },
+        head: {
+          backgroundColor: theme.palette.background.default,
+        },
+      },
+    },
+    MuiTablePagination: {
+      styleOverrides: {
+        root: {
+          borderBottom: "none",
+          color: theme.palette.text.secondary,
+        },
+        selectLabel: {
+          fontSize: "0.8125rem",
+        },
+        displayedRows: {
+          fontSize: "0.8125rem",
         },
       },
     },

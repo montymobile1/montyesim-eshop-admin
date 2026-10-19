@@ -30,8 +30,8 @@ const AuthLayout = ({ children }) => {
           overflowY: "auto",
         }}
       >
-        <div className="mt-[80px] p-2 h-[calc(100vh-80px)]">
-          <div className={"flex flex-row items-center mb-2"}>
+        <div className="mt-[80px] p-3 sm:p-6 h-[calc(100vh-80px)]">
+          <div className={"flex flex-row items-center gap-1 mb-4"}>
             {routeLength > 2 && (
               <IconButton onClick={() => navigate(-1)}>
                 <ArrowBackIosIcon fontSize="small" color="primary" />

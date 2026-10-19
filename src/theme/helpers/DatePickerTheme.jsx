@@ -6,7 +6,7 @@ export const DatePickerTheme = ({ theme }) => {
       ...base,
       width: "100%",
       padding: "10px 14px",
-      borderRadius: "16px",
+      borderRadius: "10px",
 
       border: `1px solid ${theme.palette.divider}`,
       color: theme.palette.text.secondary,
@@ -20,7 +20,7 @@ export const DatePickerTheme = ({ theme }) => {
     }),
     calendar: {
       "& .react-datepicker": {
-        borderRadius: "16px",
+        borderRadius: "10px",
 
         border: `1px solid ${theme.palette.divider}`,
       },

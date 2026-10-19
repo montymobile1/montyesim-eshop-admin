@@ -2,11 +2,11 @@ export const SelectTheme = ({ theme }) => {
   return {
     styleOverrides: {
       root: {
-        borderRadius: "16px",
+        borderRadius: "10px",
         backgroundColor: theme.palette.background.paper,
         "& .MuiOutlinedInput-root": {
           backgroundColor: theme.palette.background.paper,
-          borderRadius: "16px",
+          borderRadius: "10px",
         },
         "& .MuiInputLabel-root": {
           color: theme.palette.secondary.main,

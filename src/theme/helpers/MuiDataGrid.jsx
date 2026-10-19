@@ -1,46 +1,45 @@
+import { alpha } from "@mui/system";
+
 export const DataGridTheme = ({ theme }) => {
   return {
     MuiDataGrid: {
       styleOverrides: {
-        
         root: {
           backgroundColor: theme.palette.background.paper,
-          border: "none",
-          borderRadius: "16px", 
-          "& .MuiDataGrid-cell:focus": {
-            outline: "none !important", 
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: "12px",
+          "& .MuiDataGrid-cell:focus, & .MuiDataGrid-columnHeader:focus": {
+            outline: "none !important",
           },
           "& .MuiDataGrid-cell": {
-            border: "none", 
-          },
-          "& .MuiDataGrid-row": {
-            border: "none", 
-          },
-          "&, .MuiDataGrid-root, .MuiDataGrid-cell": {
-            border: "none !important", 
+            borderColor: theme.palette.divider,
           },
           "& .MuiDataGrid-columnHeaders": {
             backgroundColor: theme.palette.background.default,
-            fontWeight: 600,
-            color: theme.palette.text.primary,
-            borderBottom: "none",
-            borderTopLeftRadius: "16px",
-            borderTopRightRadius: "16px", 
+            borderTopLeftRadius: "12px",
+            borderTopRightRadius: "12px",
             overflow: "hidden",
           },
-          "& .MuiDataGrid-columnHeadersInner": {
-            borderBottom: "none !important", 
+          "& .MuiDataGrid-columnHeaderTitle": {
+            fontWeight: 600,
+            fontSize: "0.75rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            color: theme.palette.text.secondary,
+          },
+          "& .MuiDataGrid-columnSeparator": {
+            display: "none",
+          },
+          "& .MuiDataGrid-footerContainer": {
+            borderTop: `1px solid ${theme.palette.divider}`,
           },
         },
-        columnHeaders: {
+        columnHeader: {
           backgroundColor: theme.palette.background.default,
-          fontWeight: 600,
-          color: theme.palette.text.primary,
-          borderBottom: "none", 
         },
         row: {
           "&:hover": {
-            backgroundColor: "transparent",
+            backgroundColor: alpha(theme.palette.primary.main, 0.03),
           },
         },
       },

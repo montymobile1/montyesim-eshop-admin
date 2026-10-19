@@ -1,6 +1,7 @@
 # to prevent pull to change the index css color palette
 src/index.css merge=ours
 src/theme/themesConfig.js merge=ours
+tailwind.config.js merge=ours
 index.html merge=keepMine
 public/logo/logo.png merge=ours -text
 .gitlab-ci.yml merge=ours

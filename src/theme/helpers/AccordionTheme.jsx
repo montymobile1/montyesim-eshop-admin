@@ -1,16 +1,23 @@
 export const AccordionTheme = ({ theme }) => {
   return {
     MuiAccordion: {
+      defaultProps: {
+        elevation: 0,
+        disableGutters: true,
+      },
       styleOverrides: {
         root: {
-          border: "none",
-          backgroundColor: theme.palette.whiteColor,
-          boxShadow: "0px 0px 5px 2px rgba(0, 0, 0, 0.05)",
-          borderRadius: "7px 7px 0px 0px",
+          border: `1px solid ${theme.palette.divider}`,
+          backgroundColor: theme.palette.background.paper,
+          borderRadius: "12px",
+          overflow: "hidden",
           marginTop: "10px",
+          "&:first-of-type, &:last-of-type": {
+            borderRadius: "12px",
+          },
           ".Mui-disabled": {
-            backgroundColor: theme.palette.whiteColor,
-            color: theme.palette.secondaryColor,
+            backgroundColor: theme.palette.background.paper,
+            color: theme.palette.text.disabled,
           },
           "&::before": {
             display: "none",
@@ -28,19 +35,22 @@ export const AccordionTheme = ({ theme }) => {
       styleOverrides: {
         root: {
           background: theme.palette.primary.main,
-          padding: "1px 15px 1px",
-          borderRadius: "7px 7px 0px 0px",
+          color: theme.palette.primary.contrastText,
+          padding: "2px 16px",
+          minHeight: "48px",
           "@media (max-width:900px)": {
-            padding: "1px 10px 1px",
+            padding: "2px 12px",
           },
-          "&.Mui-expanded": {
-            padding: "10px",
-            "@media (max-width:900px)": {
-              padding: "10px",
-            },
-            transition: "0.5s all ease-in-out",
-            height: "1px",
+          "& .MuiAccordionSummary-expandIconWrapper": {
+            color: theme.palette.primary.contrastText,
           },
+        },
+      },
+    },
+    MuiAccordionDetails: {
+      styleOverrides: {
+        root: {
+          padding: "16px",
         },
       },
     },

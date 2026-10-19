@@ -14,7 +14,6 @@ const ToolTipMenu = ({ item, IsActive }) => {
 
   return (
     <Tooltip
-      key={item.key}
       title={
         <Box
           sx={{
@@ -24,7 +23,7 @@ const ToolTipMenu = ({ item, IsActive }) => {
         >
           {item.children.map((child) => (
             <ListItemButton
-              key={child.key}
+              key={child.recordGuid}
               to={`/${child.uri}`}
               component={Link}
               sx={{

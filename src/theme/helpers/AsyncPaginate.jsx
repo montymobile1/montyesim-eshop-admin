@@ -8,15 +8,14 @@ export const AsyncPaginateTheme = ({ theme }) => {
       backgroundColor: theme.palette.background.paper,
       color: theme.palette.text.primary,
       minHeight: "35px",
-      borderRadius: "16px",
+      borderRadius: "10px",
       border: `1px solid ${
         state.isFocused ? theme.palette.primary.main : theme.palette.divider
       }`,
       boxShadow: state.isFocused
-        ? `0px 0px 5px ${alpha(theme.palette.primary.main, 0.2)}`
+        ? `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`
         : "none",
       transition: "all 0.3s ease",
-      borderColor: "#c8c4c4",
       "&:hover": {
         borderColor: theme.palette.primary.main,
       },
@@ -27,26 +26,31 @@ export const AsyncPaginateTheme = ({ theme }) => {
     }),
     menu: (base) => ({
       ...base,
-      backgroundColor: theme.palette.background.default,
-      borderRadius: "8px",
+      backgroundColor: theme.palette.background.paper,
+      borderRadius: "12px",
       border: `1px solid ${theme.palette.divider}`,
+      boxShadow: "0 12px 32px -12px rgba(15, 23, 42, 0.18)",
       zIndex: 9999,
       position: "absolute",
+    }),
+    menuList: (base) => ({
+      ...base,
+      padding: "4px",
     }),
     option: (base, { isFocused, isSelected }) => {
       let backgroundColor = "transparent";
 
       if (isSelected) {
-        backgroundColor = alpha(theme.palette.primary.main, 0.4);
+        backgroundColor = alpha(theme.palette.primary.main, 0.12);
       } else if (isFocused) {
-        backgroundColor = alpha(theme.palette.primary.main, 0.2);
+        backgroundColor = alpha(theme.palette.primary.main, 0.06);
       }
 
       return {
         ...base,
         backgroundColor,
         padding: "10px",
-        borderRadius: "16px",
+        borderRadius: "10px",
         cursor: "pointer",
         transition: "background-color 0.2s ease",
       };

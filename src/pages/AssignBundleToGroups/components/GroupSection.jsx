@@ -17,7 +17,7 @@ import GroupTag from "./GroupTag";
 
 export default function GroupSection({ group }) {
   const { id, name } = group;
-  const { addToGroupTagMapping } = useAssignBundleContext();
+  const { addToGroupTagMapping, isTagSelected } = useAssignBundleContext();
 
   const [tags, setTags] = useState([]);
   const [expanded, setExpanded] = useState(true);
@@ -49,6 +49,8 @@ export default function GroupSection({ group }) {
   useEffect(() => {
     getTags();
   }, []);
+
+  const selectedCount = tags.filter((tag) => isTagSelected(tag?.id)).length;
 
   if (loading) {
     return <GroupSectionSkeleton />;
@@ -112,6 +114,26 @@ export default function GroupSection({ group }) {
           >
             {name}
           </Typography>
+          {tags.length > 0 && (
+            <Box
+              component="span"
+              sx={{
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                lineHeight: 1,
+                padding: "5px 10px",
+                borderRadius: "999px",
+                whiteSpace: "nowrap",
+                color: "#ffffff",
+                backgroundColor:
+                  selectedCount > 0
+                    ? "var(--color-secondary)"
+                    : "rgba(255, 255, 255, 0.15)",
+              }}
+            >
+              {selectedCount} / {tags.length} selected
+            </Box>
+          )}
         </div>
       </AccordionSummary>
 

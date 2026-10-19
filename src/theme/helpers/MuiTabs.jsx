@@ -6,29 +6,34 @@ export const TabsTheme = ({ theme }) => {
       styleOverrides: {
         root: {
           borderBottom: `1px solid ${theme.palette.divider}`,
-          minHeight: "48px",
+          minHeight: "44px",
           "& .MuiTab-root": {
             textTransform: "none",
           },
         },
         indicator: {
           backgroundColor: theme.palette.primary.main,
+          height: "3px",
+          borderRadius: "3px 3px 0 0",
         },
       },
     },
     MuiTab: {
       styleOverrides: {
         root: {
-          fontWeight: 500,
-          minHeight: "48px",
-          padding: "12px 16px",
+          fontWeight: 600,
+          minHeight: "44px",
+          padding: "10px 16px",
           textTransform: "none",
-          color: theme.palette.text.primary,
+          color: theme.palette.text.secondary,
+          borderRadius: "10px 10px 0 0",
+          transition: "color 0.2s ease, background-color 0.2s ease",
           "&.Mui-selected": {
             color: theme.palette.primary.main,
           },
           "&:hover": {
-            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+            color: theme.palette.primary.main,
+            backgroundColor: alpha(theme.palette.primary.main, 0.04),
           },
         },
       },
@@ -36,7 +41,7 @@ export const TabsTheme = ({ theme }) => {
     MuiTabPanel: {
       styleOverrides: {
         root: {
-          padding: "10px 0px",
+          padding: "16px 0px",
         },
       },
     },

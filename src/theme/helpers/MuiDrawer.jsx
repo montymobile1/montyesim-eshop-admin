@@ -8,6 +8,7 @@ export const DrawerTheme = ({ theme }) => {
           backgroundColor: theme.palette.background.paper,
           color: theme.palette.text.primary,
           borderRight: `1px solid ${theme.palette.divider}`,
+          boxShadow: "none",
           width: 280,
           display: "flex",
           fontWeight: 700,
@@ -26,17 +27,16 @@ export const DrawerTheme = ({ theme }) => {
     MuiListItemButton: {
       styleOverrides: {
         root: {
-          borderRadius: "8px",
+          borderRadius: "10px",
           width: "100%",
           display: "flex",
           justifyContent: "flex-start",
           alignItems: "center",
           gap: "12px",
-          padding: "12px 16px",
+          padding: "10px 14px",
+          transition: "background-color 0.2s ease, color 0.2s ease",
           "&:hover": {
-            backgroundColor:
-              theme.palette.background.hover ||
-              alpha(theme.palette.primary.main, 0.09),
+            backgroundColor: alpha(theme.palette.primary.main, 0.05),
           },
           "&.Mui-selected": {
             color: theme.palette.common.white,

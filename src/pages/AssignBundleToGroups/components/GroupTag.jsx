@@ -1,11 +1,13 @@
+import CheckIcon from "@mui/icons-material/Check";
 import { Avatar, Chip } from "@mui/material";
 import { useAssignBundleContext } from "../hooks/AssignBundleContext";
 
 export default function GroupTag({ tag }) {
   const { removeTag, isTagSelected, selectTag } = useAssignBundleContext();
+  const selected = isTagSelected(tag?.id);
 
   const handleClick = () => {
-    if (isTagSelected(tag?.id)) {
+    if (selected) {
       removeTag(tag?.id);
     } else {
       selectTag(tag?.id);
@@ -14,29 +16,37 @@ export default function GroupTag({ tag }) {
 
   return (
     <Chip
-      avatar={
-        tag?.icon && (
-          <Avatar
-            src={tag?.icon}
-            alt={tag?.name}
-            sx={{ width: 24, height: 24 }}
-          />
-        )
+      // Check, flag and name all live in the label: the chip's avatar slot
+      // only takes one element.
+      label={
+        <span className="flex items-center gap-1.5">
+          {selected && <CheckIcon sx={{ fontSize: 18, color: "inherit" }} />}
+          {tag?.icon && (
+            <Avatar
+              src={tag?.icon}
+              alt={tag?.name}
+              sx={{ width: 24, height: 24 }}
+            />
+          )}
+          {tag?.name}
+        </span>
       }
-      label={tag?.name}
       variant="outlined"
       onClick={handleClick}
       sx={{
-        borderColor: isTagSelected(tag?.id)
-          ? "var(--color-secondary)"
-          : "var(--border-shade-700)",
-        color: isTagSelected(tag?.id) ? "var(--color-secondary)" : "inherit",
-        backgroundColor: isTagSelected(tag?.id)
-          ? "var(--color-secondary-50)"
-          : "transparent",
-        fontWeight: isTagSelected(tag?.id) ? 600 : 400,
+        borderColor: selected ? "success.light" : "var(--border-shade-700)",
+        color: selected ? "#ffffff" : "inherit",
+        backgroundColor: selected ? "success.light" : "transparent",
+        fontWeight: selected ? 600 : 400,
         borderWidth: "2px",
         fontSize: "0.875rem",
+        // Keep the success color on hover instead of the chip's default grey.
+        ...(selected && {
+          "&.MuiChip-clickable:hover": {
+            backgroundColor: "success.main",
+            borderColor: "success.main",
+          },
+        }),
       }}
     />
   );

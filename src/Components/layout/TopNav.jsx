@@ -2,7 +2,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box, IconButton, Menu, MenuItem, useMediaQuery } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { alpha, useTheme } from "@mui/material/styles";
 import clsx from "clsx";
 import { useState } from "react";
 import { LazyLoadImage } from "react-lazy-load-image-component";
@@ -47,8 +47,12 @@ export default function TopNav() {
 
   return (
     <Box
-      className={clsx("w-full shadow-md sm:p-4  h-[80px] fixed top-0 z-10")}
-      sx={{ backgroundColor: theme.palette.background.paper }}
+      className={clsx("w-full sm:p-4  h-[80px] fixed top-0 z-10")}
+      sx={{
+        backgroundColor: alpha(theme.palette.background.paper, 0.85),
+        backdropFilter: "saturate(180%) blur(8px)",
+        borderBottom: `1px solid ${theme.palette.divider}`,
+      }}
     >
       <div className="flex items-center w-full h-[100%] justify-between">
         {isAuthenticated && isSmall && (

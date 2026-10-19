@@ -16,6 +16,7 @@ import { SelectTheme } from "./helpers/MuiSelectTheme";
 import { DatePickerTheme } from "./helpers/DatePickerTheme";
 import { TooltipTheme } from "./helpers/MuiTooltip";
 import { AccordionTheme } from "./helpers/AccordionTheme";
+import { SurfacesTheme } from "./helpers/MuiSurfaces";
 
 const useEnhancedEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -90,6 +91,9 @@ const inputGlobalStyles = (theme) => (
 function MontyTheme({ direction = "ltr", theme, children }) {
   const muiTheme = createTheme({
     ...theme,
+    shape: {
+      borderRadius: 10,
+    },
     typography: {
       fontFamily: '"DM Sans", sans-serif',
       fontWeightRegular: theme?.typography?.fontWeightRegular || 400,
@@ -104,22 +108,15 @@ function MontyTheme({ direction = "ltr", theme, children }) {
           },
         },
       },
-      MuiAutocomplete: {
-        styleOverrides: {
-          inputRoot: {
-            padding: "0px 8px",
-          },
-        },
-      },
-
       MuiFormHelperText: {
         styleOverrides: {
           root: {
-            color: "red",
-            margin: "0",
+            color: theme.palette.error.main,
+            margin: "4px 0 0",
+            fontSize: "0.75rem",
             wordBreak: "break-word",
             "&.Mui-disabled": {
-              color: "red",
+              color: theme.palette.error.main,
             },
           },
         },
@@ -137,6 +134,7 @@ function MontyTheme({ direction = "ltr", theme, children }) {
       ...TableTheme({ theme }),
       ...DataGridTheme({ theme }),
       ...AccordionTheme({ theme }),
+      ...SurfacesTheme({ theme }),
     },
     asyncPaginateStyles: AsyncPaginateTheme({ theme }),
     datePickerStyles: DatePickerTheme({ theme }),
