@@ -93,7 +93,7 @@ const BundleDetail = ({ onClose, bundle }) => {
         >
           <div
             className={clsx(
-              "flex flex-col w-[100%]   gap-[1rem] bg-(--bg-light) rounded-md p-2",
+              "flex flex-col w-[100%]   gap-[1rem] bg-bg-light rounded-md p-2",
               {
                 "flex-1": bundle?.bundle_category?.type === "CRUISE",
               }
@@ -112,7 +112,7 @@ const BundleDetail = ({ onClose, bundle }) => {
                   {bundle?.plan_type || "N/A"}
                 </p>
               </div>
-              <hr className={"bg-(--border-shade-600) h-[2px]"} />
+              <hr className={"bg-shade-600 h-[2px]"} />
               <div>
                 <div className={"text-content-600"}>Activation Policy</div>
                 <p className={"font-semibold break-words"}>
@@ -124,7 +124,7 @@ const BundleDetail = ({ onClose, bundle }) => {
         </div>
         <div
           className={
-            "bg-(--bg-light) flex flex-row gap-6 items-center p-2 rounded-md"
+            "bg-bg-light flex flex-row gap-6 items-center p-2 rounded-md"
           }
         >
           <div className=" flex items-center justify-center basis-[10%]">

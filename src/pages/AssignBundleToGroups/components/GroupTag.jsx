@@ -34,7 +34,7 @@ export default function GroupTag({ tag }) {
       variant="outlined"
       onClick={handleClick}
       sx={{
-        borderColor: selected ? "success.light" : "var(--border-shade-700)",
+        borderColor: selected ? "success.light" : "var(--color-shade-700)",
         color: selected ? "#ffffff" : "inherit",
         backgroundColor: selected ? "success.light" : "transparent",
         fontWeight: selected ? 600 : 400,

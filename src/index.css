@@ -1,96 +1,15 @@
 @import "tailwindcss";
+/* Branch-specific fonts and colors */
+@import "./theme/brand.css";
 
-/* EXPLANATION : woff : for compression and faster loading time */
-@font-face {
-  font-family: "quicksand-light";
-  src: url("/fonts/quicksand/Quicksand-Light.ttf") format("woff2");
-}
-
-@font-face {
-  font-family: "quicksand-regular";
-  src: url("/fonts/quicksand/Quicksand-Regular.ttf") format("woff2");
-}
-@font-face {
-  font-family: "quicksand-medium";
-  src: url("/fonts/quicksand/Quicksand-Medium.ttf") format("woff2");
-}
-
-@font-face {
-  font-family: "quicksand-semibold";
-  src: url("/fonts/quicksand/Quicksand-SemiBold.ttf") format("woff2");
-}
-@font-face {
-  font-family: "quicksand-bold";
-  src: url("/fonts/quicksand/Quicksand-Bold.ttf") format("woff2");
-}
-
-:root { 
-  --color-primary: oklch(0.27 0.0619 258.34);
-  --color-primary-900: oklch(0.27 0.0619 258.34);
-  --color-primary-800: oklch(0.35 0.0625 258.57);
-  --color-primary-700: oklch(0.43 0.0612 259.21);
-  --color-primary-600: oklch(0.5 0.0603 259.86);
-  --color-primary-500: oklch(0.57 0.0593 261.46);
-  --color-primary-400: oklch(0.65 0.0575 261.53);
-  --color-primary-300: oklch(0.72 0.0555 262.59);
-  --color-primary-200: oklch(0.79 0.0507 263.67);
-  --color-primary-100: oklch(0.86 0.0422 263);
-  --color-primary-50: oklch(0.99 0.0075 241.66);
-
-  /* Secondary Colors */
-  --color-secondary: oklch(0.61 0.2278 17.43);
-  --color-secondary-900: oklch(0.61 0.2278 17.43);
-  --color-secondary-800: oklch(0.63 0.215 14.65);
-  --color-secondary-700:oklch(0.65 0.1968 12.01);
-  --color-secondary-600: oklch(0.69 0.1747 9.82);
-  --color-secondary-500: oklch(0.72 0.1499 7.98);
-  --color-secondary-400: oklch(0.77 0.124 6.39)
-  --color-secondary-300: oklch(0.81 0.0976 5.74);
-  --color-secondary-200: oklch(0.85 0.072 4.55);
-  --color-secondary-100: oklch(0.9 0.0473 3.29);
-  --color-secondary-50:oklch(0.95 0.0238 1.34);
-
-  /* Additional Colors */
-  --color-title: oklch(53.3% 0.13 58.3); /* Same as --color-secondary */
-  --color-error: oklch(62.7% 0.77 42.1);
-  --color-success: oklch(38.7% 0.58 145.6);
-  --color-warning: oklch(77.4% 0.87 36.5);
-
-  --color-default: oklch(1 0 0);
-  /* Border Shades */
-  --border-shade-900: oklch(0.29 0.0014 17.24);
-  --border-shade-800: oklch(0.34 0.0014 17.23);
-  --border-shade-700: oklch(0.39 0.0027 17.27);
-  --border-shade-600: oklch(0.44 0.0026 17.26);
-  --border-shade-500:oklch(0.48 0.0026 17.25);
-  --border-shade-400: oklch(0.53 0.0038 17.28);
-  --border-shade-300: oklch(0.57 0.0037 17.26);
-
-  --shadow-sm: oklch(7.6% 0.03 220); /* #0000001f */
-  --shadow-md: oklch(12.2% 0.06 220); /* #0000003f */
+/****common sections: shared by all branches, merges normally from main****/
+:root {
+  --shadow-sm: #0000001f;
+  --shadow-md: #0000003f;
 
   --spacing-xs: 0.5rem;
   --spacing-sm: 0.7rem;
   --spacing-base: 1rem;
-
-  /* Background Colors */
-  --bg-light: oklch(0.961 0.009 247) !important;
-  --bg-grey: oklch(91.8% 0.05 267.2);
-
-  /* Text Content Colors */
-  --text-content-900: oklch(16.8% 0.02 101.5);
-  --text-content-800: oklch(18.7% 0.02 101.5);
-  --text-content-700: oklch(20.5% 0.02 101.5);
-  --text-content-600: oklch(22% 0.02 101.5);
-  --text-content-500: oklch(23.6% 0.02 101.5);
-  --text-content-400: oklch(25.2% 0.02 101.5);
-  --text-content-300: oklch(26.7% 0.02 101.5);
-
-  --font-quicksand-light: quicksand-light;
-  --font-quicksand-regular: quicksand-regular;
-  --font-quicksand-medium: quicksand-medium;
-  --font-quicksand-semibold: quicksand-semibold;
-  --font-quicksand-bold: quicksand-bold;
 
   --max-width-xxl: 2000px;
   --screen-xs: 475px;
@@ -102,10 +21,7 @@
 }
 
 @layer base {
- 
-
   :root {
-    
     --error: var(--color-error);
     --warning: var(--color-warning);
     --success: var(--color-success);
@@ -114,42 +30,37 @@
   body {
     color: var(--color-primary-900);
     font-size: 1rem !important;
-    font-family: var(--font-quicksand-regular) !important;
+    font-family: var(--font-sans) !important;
   }
 
   h1 {
-    margin:0 !important;
+    margin: 0 !important;
     font-size: 1.5rem !important;
     color: var(--color-title) !important;
-    font-family: var(--font-quicksand-bold) !important;
+    font-weight: 700 !important;
   }
- 
 
   h2 {
     color: var(--color-title) !important;
   }
-  
 
   h3 {
     font-size: 1.25rem !important;
     color: var(--color-title) !important;
-    font-family: var(--font-quicksand-bold) !important;
+    font-weight: 700 !important;
   }
-
 
   h4 {
     color: var(--color-title) !important;
   }
 
-
   h6 {
     color: var(--color-title) !important;
-    font-family: var(--font-quicksand-semibold) !important;
+    font-weight: 600 !important;
   }
 
-
   label {
-    font-family: var(--font-quicksand-semibold) !important;
+    font-weight: 600 !important;
     color: var(--color-primary) !important;
   }
 }
@@ -160,21 +71,6 @@
     background-color: var(--mui-palette-background-paper);
     overflow-y: auto !important;
   }
-
-  .font-bold {
-    font-family: var(--font-quicksand-bold);
-  }
-
-  .font-medium {
-    font-family: var(--font-quicksand-medium);
-  }
-
-  .font-semibold {
-    font-family: var(--font-quicksand-semibold);
-  }
-}
-body {
-  font-family: "DM Sans", sans-serif;
 }
 
 p {

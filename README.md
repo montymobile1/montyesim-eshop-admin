@@ -72,6 +72,59 @@ To streamline token management and error handling, we created a centralized `api
 
 For styling, we use **Tailwind CSS V4** (without `tailwind.config.js`) along with **Material UI (MUI)** to manage the theme colors consistently across the application.
 
+### Style files
+
+| File | Purpose |
+| --- | --- |
+| `src/theme/brand.css` | **Brand file**: the fonts and colors of the app. This is the only file to edit to rebrand the app. |
+| `src/index.css` | Shared styles (base styles, headings, labels, `.page-card`, inputs). Imports `brand.css` and never contains brand-specific values. |
+| `src/theme/themesConfig.js` | MUI theme. Reads `--color-primary` and `--color-secondary` from `brand.css` at runtime, so MUI and Tailwind always use the same colors. |
+
+### Brand file (`brand.css`)
+
+- **Colors** are defined in `@theme static` with the `--color-` prefix, which generates the Tailwind classes:
+
+  | Variable | Classes |
+  | --- | --- |
+  | `--color-primary-*`, `--color-secondary-*` | `text-primary`, `bg-secondary-100`, ... |
+  | `--color-content-*` | text colors: `text-content-600` |
+  | `--color-shade-*` | border colors: `border-shade-700` |
+  | `--color-bg-light`, `--color-bg-grey` | backgrounds: `bg-bg-light` |
+  | `--color-title`, `--color-error`, `--color-success`, `--color-warning` | `text-title`, `text-error`, ... |
+
+- Colors must be written in **hex** (e.g. `#122644`). MUI reads them and cannot parse `oklch()` or `var()`.
+- `static` makes Tailwind output every variable even if no class uses it, so MUI can always read them. Do not remove it.
+
+### Generic font name (`app-font`)
+
+The app uses one generic font family called **`app-font`**, declared once per weight in `brand.css`:
+
+```css
+@font-face {
+  font-family: "app-font";
+  font-weight: 700;
+  src: url("/fonts/quicksand/Quicksand-Bold.ttf") format("truetype");
+}
+
+@theme static {
+  --font-sans: "app-font", sans-serif;
+}
+```
+
+- `--font-sans` is Tailwind's default font, so the whole app (including MUI) uses `app-font` automatically.
+- Use the standard weight classes `font-light`, `font-normal`, `font-medium`, `font-semibold`, `font-bold`. The browser picks the matching font file. Do not reference the font by name in components.
+- **To change the font**, replace the `src` URLs of the `@font-face` rules in `brand.css`. Nothing else needs to change.
+
+### Branded branches
+
+Each branded branch keeps its own `brand.css`. It is marked `merge=ours` in `.gitattributes`, so merging `main` into a branded branch brings in all shared changes while keeping the branch's colors and fonts. This requires the merge driver to be configured locally once:
+
+```bash
+git config merge.ours.driver true
+```
+
+Merge `main` into branded branches locally (the GitLab merge button does not use this driver), and never merge a branded branch back into `main`.
+
 ## Queries
 
 Some database operations and constraints are implemented using **RPC** (remote procedure calls). This approach is necessary because Supabase does not support client-side transaction rollbacks. To address this, we’ve written SQL scripts in the Supabase SQL Editor to handle rollbacks for most queries. However, **Supabase Storage** currently does not support transactional rollbacks, so we handle any necessary cleanup manually when required.

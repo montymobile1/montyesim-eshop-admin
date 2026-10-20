@@ -1,16 +1,15 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import { CssBaseline } from "@mui/material";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import "react-datepicker/dist/react-datepicker.css";
-import { useSelector } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import persistStore from "redux-persist/es/persistStore";
 import { ToastContainer } from "react-toastify";
 import AppRouter from "./core/routes/AppRouter";
 import { store } from "./Redux/store";
 import MontyTheme from "./theme/MontyTheme";
-import themesConfig from "./theme/themesConfig";
+import getThemesConfig from "./theme/themesConfig";
 
 async function deleteDatabase(name) {
   return new Promise((resolve, reject) => {
@@ -43,9 +42,8 @@ export async function clearAllCaches() {
 
 function App() {
   const appVersion = __APP_VERSION__;
-  const mode = useSelector((state) => state.theme?.mode);
-  const theme =
-    mode == "dark" ? themesConfig.defaultDark : themesConfig.default;
+  // Built inside the component so brand.css is loaded before its variables are read
+  const theme = useMemo(() => getThemesConfig().default, []);
 
   useEffect(() => {
     const localPackageVersion = localStorage.getItem("PACKAGE_VERSION");

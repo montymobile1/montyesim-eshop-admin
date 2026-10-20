@@ -10,7 +10,7 @@ const NoDataFound = (props) => {
       })}
     >
       {image && <div>{image}</div>}
-      <p className="text-(--text-content-400) align-center text-base text-center font-semibold">
+      <p className="text-content-400 align-center text-base text-center font-semibold">
         {text}
       </p>
       {action}

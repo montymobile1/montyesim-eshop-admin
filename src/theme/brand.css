@@ -1,0 +1,92 @@
+/*
+ * Branch-specific branding: fonts and colors ONLY.
+ * Protected by `merge=ours` in .gitattributes — each branded branch keeps its own copy.
+ * Colors must stay hex: MUI reads them at runtime (src/theme/themesConfig.js) and cannot parse oklch()/var().
+ */
+
+/* One generic family "app-font"; Tailwind's font-light/normal/medium/semibold/bold pick the matching file. */
+@font-face {
+  font-family: "app-font";
+  font-weight: 300;
+  src: url("/fonts/quicksand/Quicksand-Light.ttf") format("truetype");
+}
+@font-face {
+  font-family: "app-font";
+  font-weight: 400;
+  src: url("/fonts/quicksand/Quicksand-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "app-font";
+  font-weight: 500;
+  src: url("/fonts/quicksand/Quicksand-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "app-font";
+  font-weight: 600;
+  src: url("/fonts/quicksand/Quicksand-SemiBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "app-font";
+  font-weight: 700;
+  src: url("/fonts/quicksand/Quicksand-Bold.ttf") format("truetype");
+}
+
+/* `static` emits every variable even if no utility uses it, so MUI can always read them. */
+@theme static {
+  --font-sans: "app-font", sans-serif;
+
+  /* Primary Colors */
+  --color-primary: #122644;
+  --color-primary-900: #122644;
+  --color-primary-800: #253a5a;
+  --color-primary-700: #3a4f70;
+  --color-primary-600: #4f6486;
+  --color-primary-500: #65799c;
+  --color-primary-400: #7b8fb2;
+  --color-primary-300: #92a5c8;
+  --color-primary-200: #aabbdc;
+  --color-primary-100: #c3d2ee;
+  --color-primary-50: #f6fbff;
+
+  /* Secondary Colors */
+  --color-secondary: #eb224d;
+  --color-secondary-900: #eb224d;
+  --color-secondary-800: #ed385e;
+  --color-secondary-700: #ef4e70;
+  --color-secondary-600: #f16482;
+  --color-secondary-500: #f37a94;
+  --color-secondary-400: #f590a6;
+  --color-secondary-300: #f7a6b7;
+  --color-secondary-200: #f9bcc9;
+  --color-secondary-100: #fbd2db;
+  --color-secondary-50: #fde8ed;
+
+  /* Additional Colors */
+  --color-title: #a28b6f;
+  --color-error: #ff0000;
+  --color-success: #009165;
+  --color-warning: #f68c4e;
+  --color-default: #ffffff;
+
+  /* Background Colors (bg-bg-light, bg-bg-grey) */
+  --color-bg-light: #f2f4f7;
+  --color-bg-grey: #ececec;
+
+  /* Border Shades (border-shade-*) */
+  --color-shade-900: #2c2b2b;
+  --color-shade-800: #393838;
+  --color-shade-700: #464444;
+  --color-shade-600: #535151;
+  --color-shade-500: #605e5e;
+  --color-shade-400: #6d6a6a;
+  --color-shade-300: #7a7777;
+
+  /* Text Content Colors (text-content-*) */
+  --color-content-900: #2c2b2b;
+  --color-content-800: #393838;
+  --color-content-700: #464444;
+  --color-content-600: #535151;
+  --color-content-500: #605e5e;
+  --color-content-400: #6d6a6a;
+  --color-content-300: #7a7777;
+}

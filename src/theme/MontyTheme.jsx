@@ -27,7 +27,7 @@ const inputGlobalStyles = (theme) => (
       html: {
         backgroundColor: `${theme.palette.background.default}!important`,
         color: `${theme.palette.text.primary}!important`,
-        fontFamily: '"DM Sans", sans-serif',
+        fontFamily: "var(--font-sans)",
       },
       body: {
         backgroundColor: theme.palette.background.default,
@@ -45,17 +45,11 @@ const inputGlobalStyles = (theme) => (
         borderRadius: "4px",
       },
       "::-webkit-scrollbar-thumb": {
-        background: alpha(
-          theme.palette.mode === "light" ? "#000000" : "#FFFFFF",
-          0.24
-        ),
+        background: alpha("#000000", 0.24),
         borderRadius: "4px",
       },
       "::-webkit-scrollbar-thumb:hover": {
-        background: alpha(
-          theme.palette.mode === "light" ? "#000000" : "#FFFFFF",
-          0.37
-        ),
+        background: alpha("#000000", 0.37),
       },
       "table.simple tbody tr th": {
         borderColor: theme.palette.divider,
@@ -95,7 +89,7 @@ function MontyTheme({ direction = "ltr", theme, children }) {
       borderRadius: 10,
     },
     typography: {
-      fontFamily: '"DM Sans", sans-serif',
+      fontFamily: "var(--font-sans)",
       fontWeightRegular: theme?.typography?.fontWeightRegular || 400,
       fontWeightMedium: theme?.typography?.fontWeightMedium || 500,
       fontWeightBold: theme?.typography?.fontWeightBold || 700,
@@ -145,13 +139,6 @@ function MontyTheme({ direction = "ltr", theme, children }) {
   }, [direction]);
 
   useEffect(() => {
-    document.body.classList.add(
-      muiTheme.palette.mode === "light" ? "light" : "dark"
-    );
-    document.body.classList.remove(
-      muiTheme.palette.mode === "light" ? "dark" : "light"
-    );
-
     // **Set CSS Variables for All Palette Colors**
     const setCSSVariables = (prefix, obj) => {
       Object.entries(obj).forEach(([key, value]) => {

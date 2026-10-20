@@ -4,13 +4,13 @@ export const lightPaletteText = {
   disabled: "rgb(149, 156, 169)",
 };
 
-export const darkPaletteText = {
-  primary: "rgb(255,255,255)",
-  secondary: "rgb(148, 163, 184)",
-  disabled: "rgb(156, 163, 175)",
-};
+export const contrastText = "rgb(255,255,255)";
 
-export const themesConfig = {
+// Brand colors live in src/theme/brand.css; read them at runtime so MUI and Tailwind stay in sync.
+const cssVar = (name) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+export const getThemesConfig = () => ({
   default: {
     palette: {
       mode: "light",
@@ -21,12 +21,12 @@ export const themesConfig = {
         white: "rgb(255, 255, 255)",
       },
       primary: {
-        main: "#0f172a",
-        contrastText: darkPaletteText.primary,
+        main: cssVar("--color-primary"),
+        contrastText,
       },
       secondary: {
-        main: "#eb224d",
-        contrastText: darkPaletteText.primary,
+        main: cssVar("--color-secondary"),
+        contrastText,
       },
       background: {
         paper: "#FFFFFF",
@@ -35,10 +35,10 @@ export const themesConfig = {
       },
       error: {
         main: "#f44336",
-        contrastText: darkPaletteText.primary,
+        contrastText,
       },
     },
   },
-};
+});
 
-export default themesConfig;
+export default getThemesConfig;

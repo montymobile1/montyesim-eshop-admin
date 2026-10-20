@@ -49,7 +49,8 @@ export const SurfacesTheme = ({ theme }) => {
       styleOverrides: {
         root: {
           "&:not(.MuiBackdrop-invisible)": {
-            backgroundColor: alpha(theme.palette.primary.main, 0.35),
+            // Neutral on purpose: must not follow the brand primary color
+            backgroundColor: alpha("#0f172a", 0.35),
             backdropFilter: "blur(2px)",
           },
         },
