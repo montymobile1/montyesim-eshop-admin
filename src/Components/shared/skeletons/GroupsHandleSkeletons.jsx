@@ -1,42 +1,71 @@
-import { Card, CardContent, Skeleton } from "@mui/material";
+import { Card, Skeleton } from "@mui/material";
 
-const GroupsHandleSkeletons = () => {
+// Same layout as the group form (GroupsHandle): action buttons, the three main
+// inputs, then tag cards with name, icon and search keyword (shown while
+// GET /groups/{id} loads).
+const InputSkeleton = ({ labelWidth = 80 }) => (
+  <>
+    <Skeleton variant="text" width={labelWidth} height={24} />
+    <Skeleton
+      variant="rounded"
+      height={38}
+      width="100%"
+      sx={{ borderRadius: "16px" }}
+    />
+  </>
+);
+
+const SectionTitle = ({ title }) => (
+  <div className="flex items-center">
+    <div className="w-[20px] h-px bg-gray-300" />
+    <h6 className="px-2">{title}</h6>
+    <div className="w-[20px] h-px bg-gray-300" />
+  </div>
+);
+
+const GroupsHandleSkeletons = ({ tagCount = 2 }) => {
   return (
-    <Card>
-      <CardContent className={"flex flex-col p-6 gap-[1rem]"}>
-        <div className="flex items-center">
-          <div className="w-[20px] h-px bg-gray-300" />
-          <h5 className="bg-white px-2 text-gray-700">Main Info</h5>
-          <div className="w-[20px] h-px bg-gray-300" />
+    <Card data-testid="groups-handle-skeleton" aria-busy="true">
+      <div className={"flex flex-col p-6 gap-[1rem]"}>
+        <div className={"flex flex-row gap-[0.5rem] justify-end items-center"}>
+          <Skeleton variant="rounded" width={80} height={36} />
+          <Skeleton variant="rounded" width={80} height={36} />
         </div>
-        <div className={"flex flex-wrap gap-[1rem] "}>
-          {new Array(3).fill().map((_, index) => (
-            <Skeleton
+        <SectionTitle title="Main Info" />
+        <div className={"flex flex-wrap gap-[1rem]"}>
+          {[60, 50, 90].map((labelWidth, index) => (
+            <div
               key={index} // NOSONAR
-              variant="rectangular"
-              height={50}
-              width="100%"
-              className={"flex-1"}
-            />
+              className={"flex-1 min-w-[200px]"}
+            >
+              <InputSkeleton labelWidth={labelWidth} />
+            </div>
           ))}
         </div>
-        <div className="flex items-center">
-          <div className="w-[20px] h-px bg-gray-300" />
-          <h5 className="bg-white px-2 text-gray-700">Tags</h5>
-          <div className="w-[20px] h-px bg-gray-300" />
-        </div>
-        <div className={"flex flex-wrap gap-[1rem] w-[70%]"}>
-          {new Array(2).fill().map((_, index) => (
-            <Skeleton
+        <SectionTitle title="Tags" />
+        <div className="flex flex-col gap-3 w-full sm:w-[90%]">
+          {new Array(tagCount).fill().map((_, index) => (
+            <div
               key={index} // NOSONAR
-              variant="rectangular"
-              height={50}
-              width="100%"
-              className={"flex-1"}
-            />
+              data-testid="groups-handle-skeleton-tag"
+              className="relative flex flex-col gap-3 rounded-2xl border border-gray-200 p-4"
+            >
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 min-w-0">
+                  <InputSkeleton labelWidth={60} />
+                </div>
+                <div className="w-full sm:w-[240px] shrink-0">
+                  <InputSkeleton labelWidth={40} />
+                </div>
+              </div>
+              <div className="w-full">
+                <InputSkeleton labelWidth={120} />
+              </div>
+            </div>
           ))}
+          <Skeleton variant="rounded" width={110} height={36} />
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 };

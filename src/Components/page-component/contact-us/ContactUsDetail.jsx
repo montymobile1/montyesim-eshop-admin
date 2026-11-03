@@ -25,7 +25,16 @@ const ContactUsDetail = ({ data, onClose }) => {
             Contact Us Detail
           </Typography>
 
-          <p className="text-content-600 font-medium text-justify">
+          {data?.email && (
+            <a href={`mailto:${data.email}`} className="underline">
+              {data.email}
+            </a>
+          )}
+          {/* plain text (never HTML); keeps line breaks, RTL via dir="auto" */}
+          <p
+            dir="auto"
+            className="text-content-600 font-medium text-start whitespace-pre-wrap break-words"
+          >
             {data?.content || ""}
           </p>
         </div>

@@ -1,56 +1,43 @@
 //UTILITIES
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 //component
-import { TableCell, TablePagination } from "@mui/material";
+import { TableCell } from "@mui/material";
 import { toast } from "react-toastify";
 import RowComponent from "../../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../../Components/shared/table-component/TableComponent";
-import { getAllUserDevices } from "../../../core/apis/devicesAPI";
+import TablePaginationComponent from "../../../Components/shared/table-component/TablePaginationComponent";
+import { getUserDevices } from "../../../core/apis/usersAPI";
 
-export default function DevicesTab() {
+// Devices of one user: GET /users/{id}/devices, paged server-side (MS-5080).
+// TEOS-153: a 404 (user_not_found) is not a load error: the page shows "User not found".
+export default function DevicesTab({ onNotFound }) {
   const { id } = useParams();
+  const [searchQueries, setSearchQueries] = useState({ pageSize: 10, page: 0 });
 
-  const [totalRows, setTotalRows] = useState(0);
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(null);
-  const [searchQueries, setSearchQueries] = useState({
-    pageSize: 10,
-    page: 0,
+  const { data, isFetching, isError, error } = useQuery({
+    queryKey: ["users", id, "devices", searchQueries],
+    queryFn: () =>
+      getUserDevices(id, {
+        page: searchQueries.page + 1,
+        page_size: searchQueries.pageSize,
+      }).then((res) => res?.data?.data),
+    placeholderData: keepPreviousData,
+    enabled: !!id,
   });
 
-  const getUserDevices = () => {
-    setLoading(true);
+  const notFound = error?.response?.status === 404;
 
-    const { page, pageSize } = searchQueries;
-    getAllUserDevices({
-      page,
-      pageSize,
-      id,
-    })
-      .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-          setTotalRows(0);
-          setData([]);
-        } else {
-          setTotalRows(res?.count || 0);
-          setData(
-            res?.data?.map((el) => ({
-              ...el,
-            }))
-          );
-        }
-      })
-      .catch(() => {
-        toast.error("Failed to load user devices");
-        setLoading(false);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
+  useEffect(() => {
+    if (!isError || error?.isForbidden) return;
+    if (notFound) onNotFound?.();
+    else toast.error("Failed to load user devices");
+  }, [isError]);
+
+  const rows = isError ? [] : data?.data || [];
+  const totalRows = data?.total_count || 0;
 
   const tableHeaders = [
     { name: "Deviced ID" },
@@ -61,20 +48,17 @@ export default function DevicesTab() {
     { name: "LoggedOut At" },
   ];
 
-  useEffect(() => {
-    getUserDevices();
-  }, [searchQueries]);
   return (
     <>
       <TableComponent
-        loading={loading}
+        loading={isFetching && !data}
         dataPerPage={searchQueries?.pageSize}
-        tableData={data}
+        tableData={rows}
         noDataFound={"No Devices Found"}
         tableHeaders={tableHeaders}
         actions={true}
       >
-        {data?.map((el) => (
+        {rows.map((el) => (
           <RowComponent key={el?.id} actions={true}>
             <TableCell
               sx={{ minWidth: "200px" }}
@@ -108,20 +92,15 @@ export default function DevicesTab() {
           </RowComponent>
         ))}
       </TableComponent>
-      <TablePagination
-        component="div"
-        count={totalRows || 0}
+      <TablePaginationComponent
+        totalRows={totalRows}
         page={searchQueries?.page}
+        pageSize={searchQueries?.pageSize}
         onPageChange={(e, newPage) => {
           setSearchQueries({ ...searchQueries, page: newPage });
         }}
-        rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
-          setSearchQueries({
-            ...searchQueries,
-            page: 0,
-            pageSize: e.target.value,
-          });
+          setSearchQueries({ page: 0, pageSize: Number(e.target.value) });
         }}
       />
     </>

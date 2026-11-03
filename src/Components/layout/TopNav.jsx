@@ -8,8 +8,8 @@ import { useState } from "react";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { userSignout } from "../../core/apis/usersAPI";
+import { logout } from "../../core/apis/authAPI";
+import { queryClient } from "../../core/apis/ReactQueryInstance";
 import { SignOut } from "../../Redux/reducers/AuthReducer";
 import { toggleSidebar } from "../../Redux/reducers/SidebarReducer";
 
@@ -36,13 +36,15 @@ export default function TopNav() {
   };
 
   const handleSignOut = async () => {
-    await userSignout().then((res) => {
-      if (res?.error) {
-        toast.error("Failed to signout");
-      } else {
-        dispatch(SignOut());
-      }
-    });
+    handleMenuClose();
+    // Best effort: the local session is cleared even if the API call fails
+    try {
+      await logout();
+    } catch (e) {
+      console.error("Failed to revoke the session:", e?.message);
+    }
+    dispatch(SignOut());
+    queryClient.clear();
   };
 
   return (

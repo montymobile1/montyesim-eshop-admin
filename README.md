@@ -8,7 +8,7 @@
 - **Vite** – A fast and lightweight build tool and development server that enhances React performance.
 - **Material UI** – A React component library that provides a set of pre-styled and accessible UI components following Material Design principles.
 - **Tailwind CSS** – A utility-first CSS framework used for fast and responsive custom styling.
-- **Supabase** - Backend
+- **Admin API** – The backend (`/api/v1/admin/*` in the montyesim-eshop-api repo). The portal never talks to the database directly.
 
 ---
 
@@ -16,7 +16,7 @@
 
 Before you begin, ensure you have the following software installed on your system:
 
-- **Node.js 22.14.0** (Please include an option to install npm during the installation process if it is not already selected)
+- **Node.js** (Please include an option to install npm during the installation process if it is not already selected)
 - **Git**
 - **Code Editor** such as Visual Studio Code
 
@@ -55,8 +55,7 @@ Some variables require enhanced security and should be stored in a .env file.
 Please ensure the following environment variables are defined in your .env file for the application to work correctly:
 
 ```bash
-    VITE_SUPABASE_URL=your-supabase-url
-    VITE_SUPABASE_KEY=your-supabase-key (service role key: the ban / unban user action calls auth.admin.updateUserById, which an anon key is not allowed to use)
+    VITE_API_BASE_URL=admin API origin, without the /api/v1/admin suffix ex:"https://api.example.com" (sign in, session refresh and permissions go through this API)
     VITE_CURRENCY_DEFAULT=system default currency ex:"USD"
     VITE_APP_REFER_AND_EARN=declare if refer and earn feature is enabled ex :TRUE
     VITE_APP_VOUCHER_CODE=declare if voucher feature is enabled ex :TRUE
@@ -64,9 +63,21 @@ Please ensure the following environment variables are defined in your .env file 
     VITE_GROUP_TAG_ORDERING=declare if group tag ordering (in groups ) feature is enabled ex :TRUE
 ```
 
-## Supabase Calls
+## Admin API Calls
 
-To streamline token management and error handling, we created a centralized `apiInstance` for all Supabase interactions. The Supabase URL and API key are managed securely via environment variables.
+Every page, sign in included, calls the admin API (`VITE_API_BASE_URL` + `/api/v1/admin`):
+
+- `src/core/apis/axios.jsx` holds the single axios instance (`api`). It sends the bearer token from Redux, refreshes the session once on a 401 (concurrent 401s share the same refresh) and retries the request; if the refresh fails the admin is signed out and sent to `/signin`.
+- `src/core/apis/<area>API.jsx` holds one function per endpoint (see `authAPI.jsx`), used from components with `useQuery` (`@tanstack/react-query` v5).
+- Access is permission based: the API returns `user.permissions`, constants live in `src/core/vairables/Permissions.jsx`, use `usePermission(PERMISSIONS.X)` in components and the `permission` field on routes / menu entries (`allRoutes.jsx`, `Pages.jsx`).
+
+## Portal Access
+
+Only accounts that meet all three conditions can sign in to the portal; all three are set from Supabase:
+
+1. An **email + password** account in Supabase Auth (Authentication → Users).
+2. A **confirmed email**: create the user with "Auto Confirm User" ticked, or confirm it afterwards.
+3. A **role** in the user's `app_metadata`: `admin` or `super_admin`. Without one, sign-in is refused with "admin role required". A new or changed role applies from the user's next sign-in.
 
 ## Styling
 
@@ -74,24 +85,21 @@ For styling, we use **Tailwind CSS V4** (without `tailwind.config.js`) along wit
 
 ### Style files
 
-| File | Purpose |
-| --- | --- |
-| `src/theme/brand.css` | **Brand file**: the fonts and colors of the app. This is the only file to edit to rebrand the app. |
-| `src/index.css` | Shared styles (base styles, headings, labels, `.page-card`, inputs). Imports `brand.css` and never contains brand-specific values. |
+| File                        | Purpose                                                                                                                                 |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/theme/brand.css`       | **Brand file**: the fonts and colors of the app. This is the only file to edit to rebrand the app.                                      |
+| `src/index.css`             | Shared styles (base styles, headings, labels, `.page-card`, inputs). Imports `brand.css` and never contains brand-specific values.      |
 | `src/theme/themesConfig.js` | MUI theme. Reads `--color-primary` and `--color-secondary` from `brand.css` at runtime, so MUI and Tailwind always use the same colors. |
 
 ### Brand file (`brand.css`)
 
-- **Colors** are defined in `@theme static` with the `--color-` prefix, which generates the Tailwind classes:
-
-  | Variable | Classes |
-  | --- | --- |
-  | `--color-primary-*`, `--color-secondary-*` | `text-primary`, `bg-secondary-100`, ... |
-  | `--color-content-*` | text colors: `text-content-600` |
-  | `--color-shade-*` | border colors: `border-shade-700` |
-  | `--color-bg-light`, `--color-bg-grey` | backgrounds: `bg-bg-light` |
-  | `--color-title`, `--color-error`, `--color-success`, `--color-warning` | `text-title`, `text-error`, ... |
-
+- | **Colors** are defined in `@theme static` with the `--color-` prefix, which generates the Tailwind classes: | Variable                                | Classes |
+  | ----------------------------------------------------------------------------------------------------------- | --------------------------------------- | ------- |
+  | `--color-primary-*`, `--color-secondary-*`                                                                  | `text-primary`, `bg-secondary-100`, ... |
+  | `--color-content-*`                                                                                         | text colors: `text-content-600`         |
+  | `--color-shade-*`                                                                                           | border colors: `border-shade-700`       |
+  | `--color-bg-light`, `--color-bg-grey`                                                                       | backgrounds: `bg-bg-light`              |
+  | `--color-title`, `--color-error`, `--color-success`, `--color-warning`                                      | `text-title`, `text-error`, ...         |
 - Colors must be written in **hex** (e.g. `#122644`). MUI reads them and cannot parse `oklch()` or `var()`.
 - `static` makes Tailwind output every variable even if no class uses it, so MUI can always read them. Do not remove it.
 
@@ -127,7 +135,7 @@ Merge `main` into branded branches locally (the GitLab merge button does not use
 
 ## Queries
 
-Some database operations and constraints are implemented using **RPC** (remote procedure calls). This approach is necessary because Supabase does not support client-side transaction rollbacks. To address this, we’ve written SQL scripts in the Supabase SQL Editor to handle rollbacks for most queries. However, **Supabase Storage** currently does not support transactional rollbacks, so we handle any necessary cleanup manually when required.
+Database operations that need a transaction, storage clean-up or an audit row are done by the admin API on the server. The portal only sends one request per user action and shows the result or the error.
 
 ## **Admin settings Variables**
 

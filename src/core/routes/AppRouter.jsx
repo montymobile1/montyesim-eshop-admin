@@ -1,7 +1,15 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 import { privateRoutes, publicRoutes } from "./allRoutes";
-import { WithSuperAdmins } from "../hoc/WithSuperAdmins";
+import { WithPermission } from "../hoc/WithPermission";
+
+// Routes declaring a `permission` are only rendered for admins having it
+const guardedElement = (route) =>
+  route?.permission ? (
+    <WithPermission permission={route.permission}>{route.element}</WithPermission>
+  ) : (
+    route?.element
+  );
 
 const AppRouter = () => {
   console.log("mounted.");
@@ -15,13 +23,7 @@ const AppRouter = () => {
                 index={child?.index}
                 key={child.path}
                 path={child.path}
-                element={
-                  child?.superAdminAccess ? (
-                    <WithSuperAdmins>{child.element}</WithSuperAdmins>
-                  ) : (
-                    child.element
-                  )
-                }
+                element={guardedElement(child)}
               />
             ))}
           </Route>
@@ -29,13 +31,7 @@ const AppRouter = () => {
           <Route
             key={route.path}
             index={route?.index}
-            element={
-              route?.superAdminAccess ? (
-                <WithSuperAdmins>{route?.element}</WithSuperAdmins>
-              ) : (
-                route?.element
-              )
-            }
+            element={guardedElement(route)}
           />
         )
       )}

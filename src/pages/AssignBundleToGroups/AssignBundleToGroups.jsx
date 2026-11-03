@@ -7,251 +7,256 @@ import {
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { useTheme } from "@mui/styles";
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { AsyncPaginate } from "react-select-async-paginate";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import MuiModal from "../../Components/Modals/MuiModal";
 import NoDataFound from "../../Components/shared/fallbacks/no-data-found/NoDataFound";
+import LookupSelect from "../../Components/shared/lookup-select/LookupSelect";
 import {
   assignTagsToBundle,
-  getBundleTagsAndGroups,
+  getApiErrorCode,
+  getApiErrorDetails,
+  getBundleById,
+  getGroupTags,
 } from "../../core/apis/bundlesAPI";
-import { getAllGroups } from "../../core/apis/groupsAPI";
+import { getGroupsLookup } from "../../core/apis/lookupsAPI";
+import useLeaveGuard from "../../core/hooks/useLeaveGuard";
+import usePermission from "../../core/hooks/usePermission";
+import { PERMISSIONS } from "../../core/vairables/Permissions";
 import GroupSection from "./components/GroupSection";
 import { AssignBundleContext } from "./hooks/AssignBundleContext";
 import AssignBundleToGroupsSkeleton from "./loaders/AssignBundleToGroupsSkeleton";
 
+const sameSet = (a, b) =>
+  a.length === b.length && a.every((id) => b.includes(id));
+
+// GET /groups/{id}/tags answers either a plain array or a list envelope.
+const tagsOf = (res) => {
+  const data = res?.data?.data;
+  return Array.isArray(data) ? data : data?.data || [];
+};
+
+/*
+  TEOS-168: a bundle cannot be saved with any tag of an inactive group, the tags
+  it already has included. The page blocks the save itself and names the tags;
+  the API's 422 inactive_group_tag (tag ids) is the fallback and uses the same
+  message, with the tag names the page knows.
+*/
+export const inactiveGroupTagMessage = (tagIds, tagNames = {}) => {
+  const names = (Array.isArray(tagIds) ? tagIds : [])
+    .map((tagId) => tagNames[tagId])
+    .filter(Boolean)
+    .map((name) => `“${name}”`);
+  if (!names.length) {
+    return "A selected tag belongs to an inactive group. Remove it before saving.";
+  }
+  return names.length === 1
+    ? `${names[0]} belongs to an inactive group. Remove it before saving.`
+    : `${names.join(", ")} belong to an inactive group. Remove them before saving.`;
+};
+
+// TEOS-168: is_active comes with the groups lookup and the bundle's groups; a
+// missing value (older API) counts as active.
+const isInactiveGroup =(group) => group?.is_active === false;
+
+// Inactive groups are listed but can't be picked.
+const groupOptionLabel = (option) =>
+  isInactiveGroup(option) ? `${option?.label} (inactive)` : option?.label;
+
+const toGroupOption = (group) => ({
+  ...group,
+  value: group?.id,
+  label: group?.label ?? group?.name ?? "",
+});
+
+/*
+  Assign bundle to groups (MS-5084): GET /bundles/{id} gives the bundle and its
+  tags with their groups, GET /groups/{id}/tags the tags of each selected group,
+  PUT /bundles/{id}/tags saves the whole set in one transaction. An empty set is
+  allowed, so every tag can be removed (MS-5065).
+  TEOS-169/170/171: the loaded set is the baseline; Save is enabled only when the
+  selection differs from it, leaving with a difference asks first, and after
+  Save the page stays and shows the set the API returned.
+*/
 export default function AssignBundleToGroups() {
-  const theme = useTheme();
-  const navigate = useNavigate();
-  const asyncPaginateStyles = theme?.asyncPaginateStyles || {};
+  const queryClient = useQueryClient();
+  const canWrite = usePermission(PERMISSIONS.BUNDLES_WRITE);
 
   const { bundleId } = useParams();
 
-  if (!bundleId) {
-    navigate(-1);
-  }
-
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedGroupes, setSelectedGroupes] = useState(null);
+  const [selectedGroups, setSelectedGroups] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
-  const [bundleName, setBundleName] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [groupTagMap, setGroupTagMap] = useState({});
-  const [errors, setErrors] = useState({});
-  const [dataError, setDataError] = useState(false);
-  const isTagSelectionEmpty = selectedTags?.length == 0;
+  const [savedTags, setSavedTags] = useState([]);
+  const [firstPassDone, setFirstPassDone] = useState(false);
+  const initialised = useRef(false);
 
-  const addToGroupTagMapping = (groupId, tags) => {
-    try {
-      if (!groupId) {
-        throw new Error("group id is required");
+  const bundleQuery = useQuery({
+    queryKey: ["bundles", bundleId],
+    queryFn: () => getBundleById(bundleId).then((res) => res?.data?.data),
+    enabled: !!bundleId,
+  });
+
+  // The bundle's current tags and the groups they belong to, once per load.
+  useEffect(() => {
+    if (!bundleQuery.data || initialised.current) return;
+    initialised.current = true;
+    const tags = bundleQuery.data?.tags || [];
+    const tagIds = tags.map((item) => item?.tag?.id).filter(Boolean);
+    setSelectedTags(tagIds);
+    setSavedTags(tagIds);
+    const groups = new Map();
+    tags.forEach((item) => {
+      const group = item?.tag?.group;
+      if (group?.id != null && !groups.has(group.id)) {
+        groups.set(group.id, toGroupOption({ ...group, label: group?.name }));
       }
+    });
+    setSelectedGroups(Array.from(groups.values()));
+  }, [bundleQuery.data]);
 
-      if (!tags) {
-        setGroupTagMap((prev) => {
-          if (!prev[groupId]) {
-            return { ...prev, [groupId]: [] };
-          }
-          return prev;
-        });
-        return;
-      }
+  const groupQueries = useQueries({
+    queries: selectedGroups.map((group) => ({
+      queryKey: ["groups", group?.id, "tags"],
+      queryFn: () => getGroupTags(group?.id).then(tagsOf),
+    })),
+  });
 
-      setGroupTagMap((prev) => ({
-        ...prev,
-        [groupId]: tags,
-      }));
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  const tagsByGroup = useMemo(() => {
+    const map = {};
+    selectedGroups.forEach((group, index) => {
+      map[group?.id] = {
+        tags: groupQueries[index]?.data || [],
+        loading: groupQueries[index]?.isPending,
+        error: groupQueries[index]?.error,
+      };
+    });
+    return map;
+  }, [selectedGroups, groupQueries]);
 
-  const removeFromGroupTagMapping = (groupId) => {
-    try {
-      if (!groupId) {
-        throw new Error("group id is required");
-      }
-
-      const groupTags = groupTagMap[groupId]?.map((t) => t.id) || [];
-
-      // Fix: Compare IDs directly
-      const clearedSelectedTags = selectedTags.filter(
-        (tagId) => !groupTags.includes(tagId)
-      );
-
-      setSelectedTags(clearedSelectedTags);
-
-      setGroupTagMap((prev) => {
-        const updatedMap = { ...prev };
-        delete updatedMap[groupId];
-        return updatedMap;
+  // Every tag the page knows (the bundle's and those of the selected groups):
+  // its name, and whether its group is inactive (TEOS-168).
+  const { tagNames, inactiveTagIds } = useMemo(() => {
+    const names = {};
+    const inactive = new Set();
+    (bundleQuery.data?.tags || []).forEach((item) => {
+      const tag = item?.tag;
+      if (!tag?.id) return;
+      names[tag.id] = tag?.name;
+      if (isInactiveGroup(tag?.group)) inactive.add(tag.id);
+    });
+    selectedGroups.forEach((group) => {
+      (tagsByGroup[group?.id]?.tags || []).forEach((tag) => {
+        if (!tag?.id) return;
+        names[tag.id] = tag?.name;
+        if (isInactiveGroup(group)) inactive.add(tag.id);
       });
-    } catch (error) {
-      console.log(error);
-    }
-  };
+    });
+    return { tagNames: names, inactiveTagIds: inactive };
+  }, [bundleQuery.data, selectedGroups, tagsByGroup]);
 
-  const removeGroup = (group) => {
-    const newGroups = selectedGroupes?.filter((g) => g?.id != group?.id);
-    setSelectedGroupes(newGroups);
-    removeFromGroupTagMapping(group?.id);
-  };
+  useEffect(() => {
+    const failed = groupQueries.find((query) => query.isError);
+    if (failed) toast.error(failed.error?.message || "Fail to display data");
+  }, [groupQueries.map((query) => query.isError).join(",")]);
 
-  const loadGroupOptions = async (search, loadedOptions, { page }) => {
-    const pageSize = 10;
-    const res = await getAllGroups(page, pageSize, search, true);
-    if (res?.error) {
-      setErrors((prev) => ({ ...prev, loadGroupOptions: res?.error }));
-      return {
-        options: [...loadedOptions],
-        hasMore: false,
-        additional: {
-          page: page,
-        },
-      };
-    } else {
-      removeErrorKey("loadGroupOptions");
-      return {
-        options: res?.data?.map((item) => ({
-          ...item,
-          value: item.id,
-          label: item.name,
-        })),
-        hasMore: res?.data?.length === pageSize,
-        additional: {
-          page: page + 1,
-        },
-      };
-    }
+  const removeGroupTags = (groupId) => {
+    const groupTags = (
+      queryClient.getQueryData(["groups", groupId, "tags"]) || []
+    ).map((tag) => tag?.id);
+    setSelectedTags((previous) =>
+      previous.filter((tagId) => !groupTags.includes(tagId))
+    );
   };
 
   const onChangeGroups = (value) => {
-    const newIds = value?.map((g) => g.value) || [];
-
-    // Find all removed groups
-    const removedGroups =
-      selectedGroupes?.filter((g) => !newIds.includes(g.value)) || [];
-
-    removedGroups.forEach((group) => {
-      removeFromGroupTagMapping(group?.id);
-    });
-
-    setSelectedGroupes(value || []);
+    const next = (value || []).map(toGroupOption);
+    const nextIds = next.map((group) => group?.id);
+    selectedGroups
+      .filter((group) => !nextIds.includes(group?.id))
+      .forEach((group) => removeGroupTags(group?.id));
+    setSelectedGroups(next);
   };
 
   const selectTag = (id) => {
-    if (selectedTags.includes(id)) return;
-    setSelectedTags((prev) => [...prev, id]);
+    setSelectedTags((previous) =>
+      previous.includes(id) ? previous : [...previous, id]
+    );
   };
 
-  const isTagSelected = (id) => {
-    return selectedTags.includes(id);
-  };
+  const isTagSelected = (id) => selectedTags.includes(id);
 
   const removeTag = (id) => {
-    setSelectedTags((prev) => prev.filter((tagId) => tagId !== id));
+    setSelectedTags((previous) => previous.filter((tagId) => tagId !== id));
   };
 
-  const removeErrorKey = (keyToRemove) => {
-    setErrors((prev) => {
-      if (Object.hasOwn(prev, keyToRemove)) {
-        const { [keyToRemove]: __unused, ...rest } = prev;
-        return rest;
-      }
-      return prev;
-    });
-  };
+  const dirty = !sameSet(selectedTags, savedTags);
+  const { leaveOpen, requestLeave, confirmLeave, cancelLeave } =
+    useLeaveGuard(dirty);
 
-  const fetchTags = () => {
-    setLoading(true);
-    getBundleTagsAndGroups(bundleId)
+  const assignTags = () => {
+    if (isSubmitting || !dirty) return;
+    // TEOS-168: no save while a tag of an inactive group is still selected.
+    const blocked = selectedTags.filter((tagId) => inactiveTagIds.has(tagId));
+    if (blocked.length) {
+      toast.error(inactiveGroupTagMessage(blocked, tagNames));
+      return;
+    }
+    setIsSubmitting(true);
+
+    assignTagsToBundle(bundleId, selectedTags)
       .then((res) => {
-        if (res?.error) {
-          setDataError(true);
-          toast.error(res?.error);
-        } else {
-          setBundleName(res?.bundleName);
-          const tagsFromResponse = res?.data?.map((item) => item.tag?.id) ?? [];
-          setSelectedTags(tagsFromResponse);
-
-          const alreadySelectedGroups = Array.from(
-            new Map(
-              res?.data?.map((tbr) => [
-                tbr?.tag?.tag_group?.id,
-                {
-                  ...tbr?.tag?.tag_group,
-                  value: tbr?.tag?.tag_group?.id,
-                  label: tbr?.tag?.tag_group?.name,
-                },
-              ])
-            ).values()
+        toast.success("Tags assigned successfully");
+        // TEOS-171: stay and show what the server stored (last writer wins).
+        const stored = res?.data?.data?.tag_ids ?? selectedTags;
+        setSelectedTags(stored);
+        setSavedTags(stored);
+        queryClient.invalidateQueries({ queryKey: ["bundles"] });
+      })
+      .catch((error) => {
+        if (error?.response?.status === 404) {
+          toast.error("This bundle no longer exists.");
+        } else if (getApiErrorCode(error) === "inactive_group_tag") {
+          // fallback: a group was switched off after the page loaded
+          toast.error(
+            inactiveGroupTagMessage(getApiErrorDetails(error)?.tag_ids, tagNames)
           );
-          setSelectedGroupes(alreadySelectedGroups);
-          removeErrorKey("fetchTags");
-          setDataError(false);
+        } else {
+          // TEOS-172: the readable message (set by the axios interceptor),
+          // never the machine code in developerMessage.
+          toast.error(error?.message || "Failed to assign tags");
         }
       })
       .finally(() => {
-        setLoading(false);
+        setIsSubmitting(false);
       });
-  };
-
-  const assignTags = async () => {
-    if (isTagSelectionEmpty) {
-      toast.error("Please assign at least one tag to the bundle.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const { error } = await assignTagsToBundle(bundleId, selectedTags);
-      if (error) throw error;
-      toast.success("Tag Assigned Successfully");
-      navigate("/bundles");
-    } catch (err) {
-      console.error("Failed to fetch tags:", err);
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const assignBundleContextValue = useMemo(
     () => ({
       selectedTags,
-      setSelectedTags,
-      removeGroup,
       removeTag,
       isTagSelected,
       selectTag,
-      addToGroupTagMapping,
     }),
-    [
-      selectedTags,
-      setSelectedTags,
-      removeGroup,
-      removeTag,
-      isTagSelected,
-      selectTag,
-      addToGroupTagMapping,
-    ]
+    [selectedTags]
   );
 
+  // One skeleton pass: the bundle, then the tags of its groups. Groups added
+  // later only show their own section skeleton.
+  const anyGroupPending = groupQueries.some((query) => query.isPending);
   useEffect(() => {
-    if (bundleId) fetchTags();
-  }, [bundleId]);
+    if (!firstPassDone && initialised.current && !anyGroupPending) {
+      setFirstPassDone(true);
+    }
+  }, [firstPassDone, anyGroupPending, bundleQuery.data]);
 
-  if (loading) {
-    return <AssignBundleToGroupsSkeleton />;
-  }
-
-  if (dataError) {
+  if (!bundleId || bundleQuery.isError) {
     return (
       <Card>
         <CardContent>
-          {" "}
           <NoDataFound
             text={"Invalid ID or bundle data not loaded. Please try again"}
           />
@@ -259,6 +264,12 @@ export default function AssignBundleToGroups() {
       </Card>
     );
   }
+
+  if (!firstPassDone) {
+    return <AssignBundleToGroupsSkeleton />;
+  }
+
+  const bundleName = bundleQuery.data?.bundle_name;
 
   return (
     <AssignBundleContext.Provider value={assignBundleContextValue}>
@@ -275,27 +286,30 @@ export default function AssignBundleToGroups() {
                 <label className="mb-2" htmlFor="group-select">
                   Groups
                 </label>
-                <AsyncPaginate
+                <LookupSelect
                   inputId="group-select"
                   isMulti
-                  isClearable
-                  value={selectedGroupes}
-                  loadOptions={loadGroupOptions}
+                  fetcher={getGroupsLookup}
+                  permission={PERMISSIONS.GROUPS_READ}
+                  value={selectedGroups}
                   placeholder="Select Groups"
-                  onChange={(value) => onChangeGroups(value)}
-                  additional={{ page: 1 }}
-                  isSearchable
-                  debounceTimeout={300}
-                  styles={asyncPaginateStyles}
+                  isOptionDisabled={isInactiveGroup}
+                  formatOptionLabel={groupOptionLabel}
+                  onChange={onChangeGroups}
                 />
               </FormControl>
             </div>
 
             <div className={"flex justify-end items-center gap-[0.5rem]"}>
+              {canWrite && !dirty && !isSubmitting && (
+                <Typography variant="caption" color="text.secondary">
+                  Nothing to save
+                </Typography>
+              )}
               <Button
                 variant="contained"
                 color="secondary"
-                onClick={() => navigate("/bundles")}
+                onClick={() => requestLeave("/bundles")}
               >
                 Cancel
               </Button>
@@ -303,26 +317,44 @@ export default function AssignBundleToGroups() {
                 startIcon={<SaveIcon />}
                 variant="contained"
                 color="primary"
-                onClick={() => assignTags()}
-                disabled={Object.keys(errors).length > 0 || isSubmitting}
+                onClick={assignTags}
+                disabled={!canWrite || isSubmitting || !dirty}
               >
                 {isSubmitting ? "Saving..." : "Save"}
               </Button>
             </div>
           </div>
           <Grid size={{ xs: 12 }}>
-            {selectedGroupes?.length == 0 ? (
+            {selectedGroups.length === 0 ? (
               <NoDataFound text={"No Groups Selected"} />
             ) : (
               <div className={"flex flex-col gap-[1rem]"}>
-                {selectedGroupes?.map((group) => (
-                  <GroupSection group={group} key={group?.id} />
+                {selectedGroups.map((group) => (
+                  <GroupSection
+                    key={group?.id}
+                    group={group}
+                    tags={tagsByGroup[group?.id]?.tags || []}
+                    loading={!!tagsByGroup[group?.id]?.loading}
+                  />
                 ))}
               </div>
             )}
           </Grid>
         </Grid>
       </Card>
+      {leaveOpen && (
+        <MuiModal
+          open={true}
+          onClose={cancelLeave}
+          title={"Unsaved changes"}
+          confirmButtonName={"Leave"}
+          onConfirm={confirmLeave}
+        >
+          <p className={"text-center"}>
+            You have unsaved changes. Leave without saving?
+          </p>
+        </MuiModal>
+      )}
     </AssignBundleContext.Provider>
   );
 }

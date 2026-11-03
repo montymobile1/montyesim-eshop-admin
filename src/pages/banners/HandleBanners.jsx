@@ -1,68 +1,90 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Check } from "@mui/icons-material";
-import CloseIcon from "@mui/icons-material/Close";
 import InfoIcon from "@mui/icons-material/Info";
-import { Button, Card, CircularProgress, Tooltip } from "@mui/material";
+import { Button, Card, LinearProgress, Tooltip } from "@mui/material";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useDebouncedCallback } from "use-debounce";
 import * as yup from "yup";
 import {
   FormDropdownList,
   FormInput,
   FormSingleImageUpload,
 } from "../../Components/form-component/FormComponent";
+import MuiModal from "../../Components/Modals/MuiModal";
 import NoDataFound from "../../Components/shared/fallbacks/no-data-found/NoDataFound";
 import FormsSkeletons from "../../Components/shared/skeletons/FormsSkeletons";
 
 import {
   AddBanner,
-  checkTitleUnique,
   editBanner,
+  getApiErrorCode,
   getBannerById,
 } from "../../core/apis/bannersAPI";
+import usePermission from "../../core/hooks/usePermission";
 import { actionData, platformData } from "../../core/vairables/EnumData";
+import { PERMISSIONS } from "../../core/vairables/Permissions";
+import { MAX_UPLOAD_BYTES } from "../../core/vairables/Uploads";
 
 let fileTypes = ["png", "jpg", "jpeg", "svg"];
-const schema = yup.object().shape({
-  title: yup
-    .string()
-    .label("Title")
-    .max(100)
-    .min(2)
-    .required("Title is required"),
-  description: yup
-    .string()
-    .label("Description")
-    .max(500)
-    .min(2)
-    .required("Description is required"),
-  action: yup.object().nullable().label("Action"),
-  platform: yup.object().nullable().label("Platform"),
-  image: yup.mixed().nullable().label("Image"),
-});
+
+// MS-5061: the API rejects images over 1 MB (413); check it in the browser first.
+const MAX_BANNER_IMAGE_SIZE = MAX_UPLOAD_BYTES;
+
+const schema =
+  yup.object().shape({
+    title: yup
+      .string()
+      .label("Title")
+      .trim()
+      .max(100)
+      .min(2)
+      .required("Title is required"),
+    description: yup
+      .string()
+      .label("Description")
+      .trim()
+      .max(500)
+      .min(2)
+      .required("Description is required"),
+    action: yup.object().nullable().label("Action"),
+    // the app lists banners per platform, so a banner needs one
+    platform: yup
+      .object()
+      .nullable()
+      .label("Platform")
+      .required("Platform is required"),
+    // a File (new image) or, on edit, the current image URL
+    image: yup
+      .mixed()
+      .nullable()
+      .label("Image")
+      .required("Image is required")
+      .test(
+        "fileSize",
+        "Image must be 1 MB or smaller",
+        (value) => !(value instanceof Blob) || value.size <= MAX_BANNER_IMAGE_SIZE,
+      ),
+  });
+
 
 const HandleBanners = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { id } = useParams();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const canWrite = usePermission(PERMISSIONS.BANNERS_WRITE);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [titleUnique, setTitleUnique] = useState({
-    loading: false,
-    check: false,
-    message: "",
-  });
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const {
     control,
     handleSubmit,
     reset,
     watch,
-    formState: { errors },
+    setError,
+    formState: { isDirty },
   } = useForm({
     defaultValues: {
       title: "",
@@ -75,107 +97,83 @@ const HandleBanners = () => {
     mode: "all",
   });
 
+  const {
+    data,
+    isLoading: loading,
+    isError,
+  } = useQuery({
+    queryKey: ["banner", id],
+    queryFn: () => getBannerById(id).then((res) => res?.data?.data),
+    enabled: !!id,
+    retry: false,
+  });
+
   useEffect(() => {
-    if (id) {
-      setLoading(true);
-      getBannerById(id)
-        .then((res) => {
-          if (res?.error) {
-            setData(null);
-            toast.error(res?.error);
-          } else {
-            setData(res?.data);
-            reset({
-              title: res?.data?.title || "",
-              description: res?.data?.description || "",
-              platform:
-                platformData.find((plat) => plat.id === res?.data?.platform) ||
-                null,
-              amount: res?.data?.amount || null,
-              action:
-                actionData.find((act) => act.id === res?.data?.action) || null,
-              image: res?.data?.image || null,
-            });
-            checkTitleUniqueness(res?.data?.title, id);
-          }
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+    if (data) {
+      reset({
+        title: data?.title || "",
+        description: data?.description || "",
+        platform:
+          platformData.find((plat) => plat.id === data?.platform) || null,
+        action: actionData.find((act) => act.id === data?.action) || null,
+        // a URL string: kept unless a new file is chosen
+        image: data?.image_url || null,
+      });
     }
-  }, []);
+  }, [data]);
 
   const handleSubmitForm = (payload) => {
-    if (titleUnique?.check) {
-      setIsSubmitting(true);
-      let handleAPI = id ? editBanner : AddBanner;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setUploadProgress(0);
+    let handleAPI = id ? editBanner : AddBanner;
+    const onUploadProgress = (event) => {
+      if (event?.total) {
+        setUploadProgress(Math.round((event.loaded * 100) / event.total));
+      }
+    };
 
-      handleAPI({
-        ...payload,
-        platform: payload?.platform?.id,
-        action: payload?.action?.id,
-
-        ...(id && { id: id }),
+    // One multipart request: the API uploads the image and checks the title.
+    handleAPI({
+      ...payload,
+      platform: payload?.platform?.id,
+      action: payload?.action?.id,
+      ...(id && { id: id }),
+    }, onUploadProgress)
+      .then(() => {
+        toast.success(`Banner ${id ? "edited" : "added"} successfully`);
+        queryClient.invalidateQueries({ queryKey: ["banners"] });
+        queryClient.removeQueries({ queryKey: ["banner", id] });
+        navigate(-1);
       })
-        .then((res) => {
-          if (res?.error) {
-            toast.error(res?.error || "An error occured");
-          } else {
-            toast.success(`Banner ${id ? "edited" : "added"} successfully`);
-            navigate(-1);
-          }
-        })
-        .finally(() => {
-          setIsSubmitting(false);
-        })
-        .catch((error) => {
+      .catch((error) => {
+        const status = error?.response?.status;
+        if (getApiErrorCode(error) === "duplicate_title") {
+          setError("title", { type: "server", message: "Name is not unique" });
+        } else if (status === 413) {
+          // fallback: the browser check normally stops this before the request. TEOS-191: the API's message
+          // names the limit; a 413 without one (from a proxy) keeps the generic text
+          setError("image", {
+            type: "server",
+            message: error?.response?.data?.message || "Image too large",
+          });
+        } else {
           toast.error(error?.message || "An error occured");
-        });
-    } else {
-      toast.error("Title must be unique");
-    }
+        }
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
-  const debouncedTitle = useDebouncedCallback(
-    (value) => {
-      checkTitleUniqueness(value, id);
-    },
-
-    500,
-  );
-
-  const checkTitleUniqueness = (value, id) => {
-    setTitleUnique({
-      ...titleUnique,
-      loading: true,
-    });
-    if (errors?.name) {
-      setTitleUnique({
-        check: false,
-        message: errors?.name?.message,
-        loading: false,
-      });
+  // MS-5061: leaving with unsaved changes asks for confirmation.
+  const onCancel = () => {
+    if (isDirty) {
+      setLeaveOpen(true);
     } else {
-      checkTitleUnique(value, id).then((res) => {
-        setTitleUnique({
-          check: res?.status == 200 && res?.data?.length === 0,
-          message:
-            res?.data?.length === 0
-              ? res?.error || "Name is unique"
-              : "Name is not unique",
-          loading: false,
-        });
-      });
+      navigate(-1);
     }
   };
-
-  const TitleCheck = useMemo(() => {
-    if (titleUnique?.check) {
-      return <Check color="success" sx={{ cursor: "default" }} />;
-    } else {
-      return <CloseIcon color="error" sx={{ cursor: "default" }} />;
-    }
-  }, [titleUnique?.check]);
 
   const AspectRatioDisplay = useMemo(() => {
     if (watch("platform")?.id === "mobile") {
@@ -190,8 +188,8 @@ const HandleBanners = () => {
   if (id && loading) {
     return <FormsSkeletons />;
   }
-  if (!loading && !data && id) {
-    return <NoDataFound text="Invalid Banner ID" />;
+  if (id && (isError || !data)) {
+    return <NoDataFound text="Banner not found" />;
   }
 
   return (
@@ -220,14 +218,18 @@ const HandleBanners = () => {
                   disabled={id}
                   onChange={(selected) => {
                     onChange(selected);
-                    // Reset all fields when platform changes
-                    reset({
-                      title: "",
-                      description: "",
-                      action: null,
-                      platform: selected,
-                      image: null,
-                    });
+                    // Reset all fields when platform changes (kept dirty
+                    // against the empty defaults for the leave check)
+                    reset(
+                      {
+                        title: "",
+                        description: "",
+                        action: null,
+                        platform: selected,
+                        image: null,
+                      },
+                      { keepDefaultValues: true },
+                    );
                   }}
                   placeholder={"Select Platform"}
                   helperText={error?.message}
@@ -252,27 +254,8 @@ const HandleBanners = () => {
                 <FormInput
                   placeholder={"Enter Title"}
                   value={value}
-                  onChange={(value) => {
-                    onChange(value);
-                    debouncedTitle(value);
-                  }}
+                  onChange={onChange}
                   minRows={2}
-                  disabled={id}
-                  endAdornment={
-                    value && (
-                      <Tooltip title={titleUnique?.message}>
-                        {titleUnique?.loading ? (
-                          <CircularProgress
-                            size="20px"
-                            color="primary"
-                            sx={{ cursor: "default" }}
-                          />
-                        ) : (
-                          TitleCheck
-                        )}
-                      </Tooltip>
-                    )
-                  }
                   helperText={error?.message}
                 />
               )}
@@ -376,7 +359,7 @@ const HandleBanners = () => {
           <Button
             variant={"contained"}
             color="secondary"
-            onClick={() => navigate(-1)}
+            onClick={onCancel}
           >
             Cancel
           </Button>
@@ -384,12 +367,39 @@ const HandleBanners = () => {
             type="submit"
             variant={"contained"}
             color="primary"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !canWrite}
           >
             {isSubmitting ? "Submitting..." : "Submit"}
           </Button>
         </div>
+        {isSubmitting && (
+          <div className={"flex flex-row gap-[0.5rem] justify-end items-center"}>
+            <LinearProgress
+              variant="determinate"
+              value={uploadProgress}
+              aria-label="save progress"
+              className={"w-[200px]"}
+            />
+            <span className={"text-sm"}>{uploadProgress}%</span>
+          </div>
+        )}
       </form>
+      {leaveOpen && (
+        <MuiModal
+          open={true}
+          onClose={() => setLeaveOpen(false)}
+          title={"Unsaved changes"}
+          confirmButtonName={"Leave"}
+          onConfirm={() => {
+            setLeaveOpen(false);
+            navigate(-1);
+          }}
+        >
+          <p className={"text-center"}>
+            You have unsaved changes. Leave without saving?
+          </p>
+        </MuiModal>
+      )}
     </Card>
   );
 };

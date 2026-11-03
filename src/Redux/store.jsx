@@ -4,7 +4,7 @@ import {
   applyMiddleware,
   compose,
 } from "@reduxjs/toolkit";
-import { persistReducer, persistStore } from "redux-persist";
+import { createMigrate, persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import AuthSlice from "./reducers/AuthReducer";
 import ThemeReducer from "./reducers/ThemeReducer";
@@ -18,8 +18,35 @@ const rootReducer = combineReducers({
   theme: ThemeReducer,
 });
 
+/*
+  Persisted state versions.
+  1: authentication moved from the legacy client session shape
+     ({ access_token, refresh_token, user_token, user_info: auth provider user })
+     to the admin API shape
+     ({ access_token, refresh_token, expires_at, user_info: { id, email, role, permissions }, isAuthenticated }).
+     Old sessions cannot be reused, so the user signs in again.
+*/
+const PERSIST_VERSION = 1;
+
+const signedOutAuthentication = {
+  access_token: null,
+  refresh_token: null,
+  expires_at: null,
+  user_info: null,
+  isAuthenticated: false,
+};
+
+export const persistMigrations = {
+  1: (state) => ({
+    ...state,
+    authentication: { ...signedOutAuthentication },
+  }),
+};
+
 const persistConfig = {
   key: "root",
+  version: PERSIST_VERSION,
+  migrate: createMigrate(persistMigrations, { debug: false }),
   storage,
   stateReconciler: hardSet,
   whitelist: ["authentication", "sidebar", "theme"],

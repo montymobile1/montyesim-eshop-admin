@@ -1,66 +1,19 @@
-import { api } from "./apiInstance";
-import supabase from "./supabase";
+import { api } from "./axios";
 
-export const getAllOrders = async ({
-  page,
-  pageSize,
-  user,
-  status,
-  sortBy,
-  sortDirection,
-}) => {
-  console.log(sortBy, sortDirection);
-  const from = page * pageSize;
-  const to = from + Number.parseInt(pageSize) - 1;
+/*
+  Orders (MS-5082, TEOS-119). GET /orders?page&page_size&status=all|success|pending|canceled|failed
+    &user_id&payment_status&from&to (YYYY-MM-DD)&search&sort=created_at|amount|order_status&dir
+  -> res.data.data = { data: [order + bundle_name + bundle_code + user:{id,email,msisdn}|null],
+                       total_count, facets: {all, success, pending, canceled, failed} }
+  No payment_intent_code or raw bundle_data (TEOS-117).
+  Wallet top-ups are excluded by the API.
+*/
+export const getAllOrders = async (params) => {
+  return await api.get(`orders`, { params });
+};
 
-  try {
-    // Step 1: Fetch orders
-    const orderRes = await api(() => {
-      let query = supabase
-        .from("user_order")
-        .select("*", { count: "exact" })
-        .neq("order_type", "Wallet_Top_Up")
-        .order(sortBy || "created_at", {
-          ascending: sortDirection == "asc",
-        });
-
-      if (user) {
-        query = query.eq("user_id", user);
-      }
-
-      if (status) {
-        query = query.eq("order_status", status);
-      }
-
-      query = query.range(from, to);
-
-      return query;
-    });
-
-    const userIds = [...new Set(orderRes.data.map((order) => order.user_id))];
-
-    // Step 3: Fetch user_copy info
-    const { data: users, error } = await supabase
-      .from("users_copy")
-      .select("id,metadata")
-      .in("id", userIds);
-
-    if (error) throw error;
-
-    // Step 4: Merge user info into orders
-    const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
-
-    const enrichedOrders = orderRes.data.map((order) => ({
-      ...order,
-      user: userMap[order.user_id] || null,
-    }));
-
-    return {
-      ...orderRes,
-      data: enrichedOrders,
-    };
-  } catch (error) {
-    console.error("Merge user info into orders failed:", error);
-    throw error;
-  }
+// The user selected in the filter, to show its email after a reload (only the id is in the URL).
+// GET /users/lookup?id=<id> -> res.data.data = { data: [{ id, label, email }], total_count }
+export const getOrdersFilterUser = async (id) => {
+  return await api.get(`users/lookup`, { params: { id } });
 };

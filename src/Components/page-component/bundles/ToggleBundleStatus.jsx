@@ -1,7 +1,6 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import * as yup from "yup";
 //COMPONENT
@@ -9,20 +8,15 @@ import { Close } from "@mui/icons-material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Button, Dialog, DialogContent, IconButton } from "@mui/material";
-import { toggleBundleStatus } from "../../../core/apis/bundlesAPI";
+import {
+  getApiErrorCode,
+  toggleBundleStatus,
+} from "../../../core/apis/bundlesAPI";
+import { reasonSchema } from "../../../core/helpers/reasonSchema";
 import { FormInput } from "../../form-component/FormComponent";
 
 const schema = yup.object().shape({
-  reason: yup
-    .string()
-    .label("Reason")
-    .max(500)
-    .required()
-    .test(
-      "not-only-spaces",
-      "Reason cannot be only spaces",
-      (value) => value != null && value.trim().length > 0,
-    ),
+  reason: reasonSchema(),
 });
 
 const STEPS = {
@@ -30,15 +24,20 @@ const STEPS = {
   CONFIRM: "confirm",
 };
 
+/*
+  One PATCH /bundles/{id}/status. The API writes the audit row (with the reason)
+  and rotates APP_CACHE_KEY in the same transaction, so there is no audit or
+  cache code here any more.
+*/
 const ToggleBundleStatus = ({ bundle, onClose, onSuccess }) => {
   const [step, setStep] = useState(STEPS.REASON);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const userId = useSelector((state) => state.authentication?.user_info?.id);
 
   const {
     control,
     handleSubmit,
     getValues,
+    setError,
     formState: { isValid },
   } = useForm({
     defaultValues: {
@@ -56,29 +55,44 @@ const ToggleBundleStatus = ({ bundle, onClose, onSuccess }) => {
     bundle?.bundle_name || bundle?.data?.bundle_name || bundle?.id;
 
   const handleToggle = () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
     toggleBundleStatus({
       id: bundle?.id,
-      currentValue: isActive,
-      reason: getValues("reason")?.trim(),
-      userId,
+      is_active: !isActive,
+      reason: getValues("reason"),
     })
-      .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-          return;
-        }
-
-        toast.success(res?.data?.message);
-        if (res?.auditError) {
-          toast.warn(
-            `Bundle updated but the audit log failed: ${res.auditError}`,
-          );
-        }
-
+      .then(() => {
+        toast.success(
+          isActive
+            ? "The bundle has been successfully deactivated."
+            : "The bundle has been successfully activated.",
+        );
         onSuccess();
         onClose();
+      })
+      .catch((error) => {
+        const status = error?.response?.status;
+        if (getApiErrorCode(error) === "no_change") {
+          toast.info(
+            `This bundle is already ${isActive ? "inactive" : "active"}.`,
+          );
+          onSuccess();
+          onClose();
+        } else if (status === 404) {
+          toast.info("This bundle no longer exists.");
+          onSuccess();
+          onClose();
+        } else if (status === 422) {
+          setError("reason", {
+            type: "server",
+            message: error?.message,
+          });
+          setStep(STEPS.REASON);
+        } else {
+          toast.error(error?.message || "Failed to update the bundle status");
+        }
       })
       .finally(() => {
         setIsSubmitting(false);

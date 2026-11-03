@@ -1,6 +1,7 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { LockOutlined, MailOutline } from "@mui/icons-material";
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -9,26 +10,36 @@ import {
   Typography,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
 import {
   FormInput,
   FormPassword,
 } from "../../Components/form-component/FormComponent";
-import supabase from "../../core/apis/supabase";
-import { SignIn } from "../../Redux/reducers/AuthReducer";
+import { login } from "../../core/apis/authAPI";
+import { SIGN_OUT_REASONS } from "../../core/apis/axios";
+import { ClearSignOutReason, SignIn } from "../../Redux/reducers/AuthReducer";
 
 const validationSchema = Yup.object({
-  email: Yup.string().required("Email is required"),
+  // Format checked before the API call, so a typo gets a field error instead of a 422 toast (TEOS-146)
+  email: Yup.string()
+    .trim()
+    .email("Enter a valid email address")
+    .required("Email is required"),
   password: Yup.string().required("Password is required"),
 });
 
+// Only same-app paths are allowed as ?next= targets
+const getNextPath = (next) =>
+  next && next.startsWith("/") && !next.startsWith("//") ? next : "/users";
+
 export default function SignInPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
@@ -42,27 +53,36 @@ export default function SignInPage() {
     mode: "all",
   });
 
+  // TEOS-145: why the previous session ended (set by the axios interceptor).
+  const signOutReason = SIGN_OUT_REASONS[searchParams.get("reason")];
+
+  // TEOS-145: the reason is now in the URL, so the stored one is no longer needed
+  const storedReason = useSelector((state) => state.authentication?.signOutReason);
+  useEffect(() => {
+    if (storedReason) dispatch(ClearSignOutReason());
+  }, [storedReason]);
+
+  // The message goes away once the admin starts typing the email; ?next= is kept.
+  const dismissSignOutReason = () => {
+    if (!searchParams.has("reason")) return;
+    const params = new URLSearchParams(searchParams);
+    params.delete("reason");
+    setSearchParams(params, { replace: true });
+  };
+
   const handleSubmitForm = async (payload) => {
     setLoading(true);
 
-    await supabase.auth
-      .signInWithPassword({
-        email: payload.email?.trim(),
-        password: payload.password?.trim(),
-      })
+    await login({
+      email: payload.email?.trim(),
+      password: payload.password?.trim(),
+    })
       .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error?.message || "Failed to Sign in");
-          console.error("Error fetching data:", res?.error?.code);
+        if (res?.data?.status === "success" && res?.data?.data?.access_token) {
+          dispatch(SignIn(res.data.data));
+          navigate(getNextPath(searchParams.get("next")), { replace: true });
         } else {
-          dispatch(
-            SignIn({
-              access_token: res.data.session.access_token,
-              refresh_token: res?.data?.session?.refresh_token,
-              user_info: res.data.user,
-            })
-          );
-          navigate("/users");
+          toast.error(res?.data?.message || "Failed to Sign in");
         }
       })
       .catch((e) => {
@@ -111,6 +131,12 @@ export default function SignInPage() {
             </div>
           </div>
 
+          {signOutReason && (
+            <Alert severity="warning" data-testid="sign-out-reason">
+              {signOutReason}
+            </Alert>
+          )}
+
           <form
             className="flex flex-col gap-5"
             onSubmit={handleSubmit(handleSubmitForm)}
@@ -134,7 +160,10 @@ export default function SignInPage() {
                     placeholder={"you@example.com"}
                     value={value}
                     helperText={error?.message}
-                    onChange={(value) => onChange(value)}
+                    onChange={(value) => {
+                      onChange(value);
+                      dismissSignOutReason();
+                    }}
                     startAdornment={
                       <MailOutline fontSize="small" sx={{ color: "text.secondary" }} />
                     }

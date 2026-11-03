@@ -2,11 +2,13 @@ import CheckIcon from "@mui/icons-material/Check";
 import { Avatar, Chip } from "@mui/material";
 import { useAssignBundleContext } from "../hooks/AssignBundleContext";
 
-export default function GroupTag({ tag }) {
+// disabled: a tag of an inactive group that isn't selected can't be picked (TEOS-168).
+export default function GroupTag({ tag, disabled = false }) {
   const { removeTag, isTagSelected, selectTag } = useAssignBundleContext();
   const selected = isTagSelected(tag?.id);
 
   const handleClick = () => {
+    if (disabled) return;
     if (selected) {
       removeTag(tag?.id);
     } else {
@@ -33,6 +35,8 @@ export default function GroupTag({ tag }) {
       }
       variant="outlined"
       onClick={handleClick}
+      disabled={disabled}
+      data-testid={`group-tag-${tag?.id}`}
       sx={{
         borderColor: selected ? "success.light" : "var(--color-shade-700)",
         color: selected ? "#ffffff" : "inherit",

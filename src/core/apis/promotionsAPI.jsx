@@ -1,286 +1,73 @@
-import { api } from "./apiInstance";
-import supabase from "./supabase";
+import { api } from "./axios";
 
-export const getAllPromotions = async (
-  page,
-  pageSize,
+/*
+  MS-5051 / MS-5053 / MS-5055: promotions on the admin API (backend MS-5050, MS-5052, MS-5054).
+  Lists come back as res.data.data = { data: [...], total_count, facets?, totals? }.
+*/
+
+// GET /promotions?search&status&rule_ids[]&bundle_codes[]&include_global&page&page_size
+// facets: { all, active, inactive, expired, scheduled }
+export const getAllPromotions = (params) =>
+  api.get("promotions", { params, paramsSerializer: { indexes: null } });
+
+// GET /promotions/{id} -> the promotion with rule and bundle_codes[]
+export const getPromotionById = (id) => api.get(`promotions/${id}`);
+
+// POST /promotions { name, code, rule_id, amount?, valid_from, valid_to, bundle_codes[] }
+// -> 201; 409 duplicate_code / duplicate_name; 422 unknown bundle code.
+// The server sets type, is_active and times_used: never send them.
+export const AddPromotion = ({
   name,
-  rules,
-  bundles
-) => {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  try {
-    const res = await api(() => {
-      let query = supabase.from("promotion").select(
-        `*, promotion_rule(
-         *,
-         promotion_rule_action(id, name),
-         promotion_rule_event(id, name)
-       )`,
-        { count: "exact" }
-      );
+  code,
+  rule_id,
+  amount,
+  valid_from,
+  valid_to,
+  bundle_codes,
+}) =>
+  api.post("promotions", {
+    name,
+    code,
+    rule_id,
+    ...(amount !== null && amount !== undefined && amount !== "" && { amount }),
+    valid_from,
+    valid_to,
+    bundle_codes: bundle_codes || [],
+  });
 
-      if (name?.trim()) {
-        query = query.or(`name.ilike.%${name}%,code.ilike.%${name}%`);
-      }
-
-      if (rules?.length !== 0) {
-        query = query.in("rule_id", rules);
-      }
-
-      if (bundles?.trim()) {
-        const bundleList = bundles?.split(",")?.map((b) => b.trim());
-        const bundleConditions = bundleList?.map(
-          (code) => `bundle_code.ilike.%${code}%`
-        );
-
-        bundleConditions.push("bundle_code.is.null");
-        query = query.or(bundleConditions.join(","));
-      }
-
-      query = query.range(from, to).order("created_at", { ascending: false });
-
-      return query;
-    });
-
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const togglePromotionStatus = async ({ id, currentValue }) => {
-  try {
-    const res = await api(() => {
-      let query = supabase
-        .from("promotion")
-        .update({ is_active: !currentValue })
-        .eq("id", id)
-        .select();
-
-      return query;
-    });
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const AddPromotion = async (payload) => {
-  try {
-    const res = await api(async () => {
-      // Proceed to insert promotion
-      const insertResponse = await supabase
-        .from("promotion")
-        .insert([payload])
-        .select();
-
-      if (!insertResponse || insertResponse.error) {
-        throw insertResponse.error;
-      }
-
-      return insertResponse.data;
-    });
-
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const editPromotion = async (payload) => {
-  try {
-    const { data, error } = await api(() => {
-      return supabase
-        .from("promotion")
-        .select("id")
-        .eq("id", payload?.id)
-        .maybeSingle();
-    });
-
-    if (!data || data?.length === 0) {
-      throw new Error("Invalid Promotion ID");
-    } else if (error) {
-      throw error;
-    } else {
-      const res = await api(async () => {
-        const bundleCodes = payload?.bundle_code || "";
-
-        const editPromotionRes = await supabase
-          .from("promotion")
-          .update({
-            name: payload?.name,
-            bundle_code: bundleCodes,
-          })
-          .eq("id", payload?.id)
-          .select();
-
-        if (!editPromotionRes || editPromotionRes.error) {
-          throw editPromotionRes?.error;
-        }
-
-        return editPromotionRes.data;
-      });
-
-      return res;
+// PUT /promotions/{id} { name, bundle_codes, valid_to?, code?, rule_id?, amount?, valid_from? }
+// code, rule_id, amount and valid_from are immutable once used (409 promotion_used).
+export const editPromotion = ({ id, ...body }) => {
+  const payload = { name: body.name, bundle_codes: body.bundle_codes || [] };
+  ["valid_to", "code", "rule_id", "amount", "valid_from"].forEach((key) => {
+    if (body[key] !== null && body[key] !== undefined && body[key] !== "") {
+      payload[key] = body[key];
     }
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const deletePromotion = async (promoCode) => {
-  const fetchRes = await api(() => {
-    let query = supabase
-      .from("promotion_usage")
-      .select("*, promotion(code)")
-      .eq("promotion_code", promoCode);
-    return query;
   });
-
-  if (fetchRes?.error) return fetchRes;
-
-  if (fetchRes?.data && fetchRes?.data?.length > 0) {
-    throw new Error(
-      "This promotion cannot be deleted because it is already linked to a transaction"
-    );
-  }
-
-  const res = await api(() => {
-    let query = supabase.from("promotion").delete().in("code", [promoCode]);
-
-    return query;
-  });
-
-  return res;
+  return api.put(`promotions/${id}`, payload);
 };
 
-export const checkNameUnique = async (payload, id) => {
+// PATCH /promotions/{id}/status { is_active } -> 409 no_change when already in that state
+export const togglePromotionStatus = ({ id, is_active }) =>
+  api.patch(`promotions/${id}/status`, { is_active });
+
+// DELETE /promotions/{id} -> 204; 409 promotion_used { times_used }
+export const deletePromotion = (id) => api.delete(`promotions/${id}`);
+
+// GET /promotions/usage?code&user_id&bundle_ids[]&from&to&page&page_size
+// totals: { uses, distinct_users, discount_amount: [{ currency, amount }] }
+export const getAllPromotionsUsage = (params) =>
+  api.get("promotions/usage", { params, paramsSerializer: { indexes: null } });
+
+// Shared helper, defined once in ./axios.
+export { getApiErrorCode } from "./axios";
+
+// The whole 409 detail object, e.g. { code: "promotion_used", times_used: 3 }.
+export const getApiErrorDetails = (error) => {
   try {
-    const res = await api(() => {
-      let query = supabase
-        .from("promotion")
-        .select("id")
-        .eq("name", payload)
-        .limit(1);
-
-      if (id) {
-        query = query.neq("id", id);
-      }
-
-      return query;
-    });
-
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const checkCodeUnique = async (payload, id) => {
-  try {
-    const res = await api(() => {
-      let query = supabase
-        .from("promotion")
-        .select("id")
-        .eq("code", payload)
-        .limit(1);
-      if (id) {
-        query = query.neq("id", id);
-      }
-      return query;
-    });
-
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const getPromotionById = async (id) => {
-  try {
-    const res = await api(() => {
-      let query = supabase
-        .from("promotion")
-        .select(
-          "*,promotion_rule(*,promotion_rule_action(*),promotion_rule_event(*))",
-          { count: "exact" }
-        )
-
-        .eq("id", id)
-        .order("created_at", {
-          referencedTable: "promotion_rule",
-          ascending: false,
-        })
-        .single();
-
-      return query;
-    });
-
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const getAllPromotionsUsage = async (
-  page,
-  pageSize,
-  name,
-  user,
-  bundles
-) => {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  try {
-    // Step 1: Fetch orders
-    const promotionRes = await api(() => {
-      let query = supabase
-        .from("promotion_usage")
-        .select(`*,promotion:promotion_code(code, id)`, { count: "exact" })
-        .not("promotion_code", "is", null);
-
-      if (name?.trim()) {
-        query = query.or(`promotion_code.ilike.%${name}%`);
-      }
-
-      if (user) {
-        query = query.eq("user_id", user);
-      }
-
-      if (bundles?.length > 0) {
-        query = query.in("bundle_id", bundles);
-      }
-
-      query = query.range(from, to).order("created_at", { ascending: false });
-
-      return query;
-    });
-
-    const userIds = [...new Set(promotionRes?.data?.map((p) => p?.user_id))];
-
-    // Step 3: Fetch user_copy info
-    const { data: users, error } = await supabase
-      .from("users_copy")
-      .select("id,metadata")
-      .in("id", userIds);
-
-    if (error) throw error;
-
-    // Step 4: Merge user info into orders
-    const userMap = Object.fromEntries(users?.map((u) => [u.id, u]));
-
-    const enrichedPromotion = promotionRes?.data?.map((p) => ({
-      ...p,
-      user: userMap[p?.user_id] || null,
-    }));
-
-    return {
-      ...promotionRes,
-      data: enrichedPromotion,
-    };
-  } catch (error) {
-    throw error;
+    const parsed = JSON.parse(error?.response?.data?.developerMessage);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
   }
 };

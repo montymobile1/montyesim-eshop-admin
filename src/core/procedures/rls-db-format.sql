@@ -1,185 +1,104 @@
-DO $$
-BEGIN
+ALTER TABLE IF EXISTS public.app_config ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.app_config; DROP POLICY IF EXISTS all_access_insert ON public.app_config; DROP POLICY IF EXISTS all_access_update ON public.app_config; DROP POLICY IF EXISTS all_access_delete ON public.app_config;
 
-  -- app_config
-  IF to_regclass('public.app_config') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.app_config;
-    DROP POLICY IF EXISTS "insert policy" ON public.app_config;
-    DROP POLICY IF EXISTS "update policy" ON public.app_config;
-    DROP POLICY IF EXISTS "delete policy" ON public.app_config;
+ALTER TABLE IF EXISTS public.audit_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.audit_log; DROP POLICY IF EXISTS all_access_insert ON public.audit_log; DROP POLICY IF EXISTS all_access_update ON public.audit_log; DROP POLICY IF EXISTS all_access_delete ON public.audit_log;
 
-    CREATE POLICY "select policy" ON public.app_config FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.app_config FOR INSERT WITH CHECK (true);
-    CREATE POLICY "update policy" ON public.app_config FOR UPDATE USING (true) WITH CHECK (true);
-    CREATE POLICY "delete policy" ON public.app_config FOR DELETE USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.banner ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.banner; DROP POLICY IF EXISTS all_access_insert ON public.banner; DROP POLICY IF EXISTS all_access_update ON public.banner; DROP POLICY IF EXISTS all_access_delete ON public.banner;
 
-  -- contact_us
-  IF to_regclass('public.contact_us') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.contact_us;
-    CREATE POLICY "select policy" ON public.contact_us FOR SELECT USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.banner_translation ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.banner_translation; DROP POLICY IF EXISTS all_access_insert ON public.banner_translation; DROP POLICY IF EXISTS all_access_update ON public.banner_translation; DROP POLICY IF EXISTS all_access_delete ON public.banner_translation;
 
-  -- user_wallet_transaction
-  IF to_regclass('public.user_wallet_transaction') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.user_wallet_transaction;
-    CREATE POLICY "select policy" ON public.user_wallet_transaction FOR SELECT USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.bundle ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.bundle; DROP POLICY IF EXISTS all_access_insert ON public.bundle; DROP POLICY IF EXISTS all_access_update ON public.bundle; DROP POLICY IF EXISTS all_access_delete ON public.bundle;
 
-  -- user_wallet
-  IF to_regclass('public.user_wallet') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.user_wallet;
-    CREATE POLICY "select policy" ON public.user_wallet FOR SELECT USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.bundle_tag ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.bundle_tag; DROP POLICY IF EXISTS all_access_insert ON public.bundle_tag; DROP POLICY IF EXISTS all_access_update ON public.bundle_tag; DROP POLICY IF EXISTS all_access_delete ON public.bundle_tag;
 
-  -- promotion
-  IF to_regclass('public.promotion') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.promotion;
-    DROP POLICY IF EXISTS "insert policy" ON public.promotion;
-    DROP POLICY IF EXISTS "update policy" ON public.promotion;
-    DROP POLICY IF EXISTS "delete policy" ON public.promotion;
+ALTER TABLE IF EXISTS public.bundle_translation ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.bundle_translation; DROP POLICY IF EXISTS all_access_insert ON public.bundle_translation; DROP POLICY IF EXISTS all_access_update ON public.bundle_translation; DROP POLICY IF EXISTS all_access_delete ON public.bundle_translation;
 
-    CREATE POLICY "select policy" ON public.promotion FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.promotion FOR INSERT WITH CHECK (true);
-    CREATE POLICY "update policy" ON public.promotion FOR UPDATE USING (true) WITH CHECK (true);
-    CREATE POLICY "delete policy" ON public.promotion FOR DELETE USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.contact_us ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.contact_us; DROP POLICY IF EXISTS all_access_insert ON public.contact_us; DROP POLICY IF EXISTS all_access_update ON public.contact_us; DROP POLICY IF EXISTS all_access_delete ON public.contact_us;
 
-  -- promotion_rule
-  IF to_regclass('public.promotion_rule') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.promotion_rule;
-    DROP POLICY IF EXISTS "insert policy" ON public.promotion_rule;
-    DROP POLICY IF EXISTS "update policy" ON public.promotion_rule;
-    DROP POLICY IF EXISTS "delete policy" ON public.promotion_rule;
+ALTER TABLE IF EXISTS public.currency ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.currency; DROP POLICY IF EXISTS all_access_insert ON public.currency; DROP POLICY IF EXISTS all_access_update ON public.currency; DROP POLICY IF EXISTS all_access_delete ON public.currency;
 
-    CREATE POLICY "select policy" ON public.promotion_rule FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.promotion_rule FOR INSERT WITH CHECK (true);
-    CREATE POLICY "update policy" ON public.promotion_rule FOR UPDATE USING (true) WITH CHECK (true);
-    CREATE POLICY "delete policy" ON public.promotion_rule FOR DELETE USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.device ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.device; DROP POLICY IF EXISTS all_access_insert ON public.device; DROP POLICY IF EXISTS all_access_update ON public.device; DROP POLICY IF EXISTS all_access_delete ON public.device;
 
-  -- promotion_rule_event
-  IF to_regclass('public.promotion_rule_event') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.promotion_rule_event;
-    CREATE POLICY "select policy" ON public.promotion_rule_event FOR SELECT USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.mcp_card_checkout ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.mcp_card_checkout; DROP POLICY IF EXISTS all_access_insert ON public.mcp_card_checkout; DROP POLICY IF EXISTS all_access_update ON public.mcp_card_checkout; DROP POLICY IF EXISTS all_access_delete ON public.mcp_card_checkout;
 
-  -- promotion_rule_action
-  IF to_regclass('public.promotion_rule_action') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.promotion_rule_action;
-    CREATE POLICY "select policy" ON public.promotion_rule_action FOR SELECT USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.mcp_purchase_idempotency ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.mcp_purchase_idempotency; DROP POLICY IF EXISTS all_access_insert ON public.mcp_purchase_idempotency; DROP POLICY IF EXISTS all_access_update ON public.mcp_purchase_idempotency; DROP POLICY IF EXISTS all_access_delete ON public.mcp_purchase_idempotency;
 
-  -- promotion_usage
-  IF to_regclass('public.promotion_usage') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.promotion_usage;
-    DROP POLICY IF EXISTS "insert policy" ON public.promotion_usage;
+ALTER TABLE IF EXISTS public.mcp_stripe_webhook_event ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.mcp_stripe_webhook_event; DROP POLICY IF EXISTS all_access_insert ON public.mcp_stripe_webhook_event; DROP POLICY IF EXISTS all_access_update ON public.mcp_stripe_webhook_event; DROP POLICY IF EXISTS all_access_delete ON public.mcp_stripe_webhook_event;
 
-    CREATE POLICY "select policy" ON public.promotion_usage FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.promotion_usage FOR INSERT WITH CHECK (true);
-  END IF;
+ALTER TABLE IF EXISTS public.notification ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.notification; DROP POLICY IF EXISTS all_access_insert ON public.notification; DROP POLICY IF EXISTS all_access_update ON public.notification; DROP POLICY IF EXISTS all_access_delete ON public.notification;
 
-  -- users_copy
-  IF to_regclass('public.users_copy') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.users_copy;
-    DROP POLICY IF EXISTS "insert policy" ON public.users_copy;
+ALTER TABLE IF EXISTS public.promotion ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.promotion; DROP POLICY IF EXISTS all_access_insert ON public.promotion; DROP POLICY IF EXISTS all_access_update ON public.promotion; DROP POLICY IF EXISTS all_access_delete ON public.promotion;
 
-    CREATE POLICY "select policy" ON public.users_copy FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.users_copy FOR INSERT WITH CHECK (true);
-  END IF;
+ALTER TABLE IF EXISTS public.promotion_rule ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.promotion_rule; DROP POLICY IF EXISTS all_access_insert ON public.promotion_rule; DROP POLICY IF EXISTS all_access_update ON public.promotion_rule; DROP POLICY IF EXISTS all_access_delete ON public.promotion_rule;
 
-  -- user_order
-  IF to_regclass('public.user_order') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.user_order;
-    DROP POLICY IF EXISTS "insert policy" ON public.user_order;
+ALTER TABLE IF EXISTS public.promotion_rule_action ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.promotion_rule_action; DROP POLICY IF EXISTS all_access_insert ON public.promotion_rule_action; DROP POLICY IF EXISTS all_access_update ON public.promotion_rule_action; DROP POLICY IF EXISTS all_access_delete ON public.promotion_rule_action;
 
-    CREATE POLICY "select policy" ON public.user_order FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.user_order FOR INSERT WITH CHECK (true);
-  END IF;
+ALTER TABLE IF EXISTS public.promotion_rule_event ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.promotion_rule_event; DROP POLICY IF EXISTS all_access_insert ON public.promotion_rule_event; DROP POLICY IF EXISTS all_access_update ON public.promotion_rule_event; DROP POLICY IF EXISTS all_access_delete ON public.promotion_rule_event;
 
-  -- bundle
-  IF to_regclass('public.bundle') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.bundle;
-    DROP POLICY IF EXISTS "insert policy" ON public.bundle;
-    DROP POLICY IF EXISTS "update policy" ON public.bundle;
-    DROP POLICY IF EXISTS "delete policy" ON public.bundle;
+ALTER TABLE IF EXISTS public.promotion_usage ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.promotion_usage; DROP POLICY IF EXISTS all_access_insert ON public.promotion_usage; DROP POLICY IF EXISTS all_access_update ON public.promotion_usage; DROP POLICY IF EXISTS all_access_delete ON public.promotion_usage;
 
-    CREATE POLICY "select policy" ON public.bundle FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.bundle FOR INSERT WITH CHECK (true);
-    CREATE POLICY "update policy" ON public.bundle FOR UPDATE USING (true) WITH CHECK (true);
-    CREATE POLICY "delete policy" ON public.bundle FOR DELETE USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.tag ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.tag; DROP POLICY IF EXISTS all_access_insert ON public.tag; DROP POLICY IF EXISTS all_access_update ON public.tag; DROP POLICY IF EXISTS all_access_delete ON public.tag;
 
-  -- voucher
-  IF to_regclass('public.voucher') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.voucher;
-    DROP POLICY IF EXISTS "insert policy" ON public.voucher;
-    DROP POLICY IF EXISTS "update policy" ON public.voucher;
-    DROP POLICY IF EXISTS "delete policy" ON public.voucher;
+ALTER TABLE IF EXISTS public.tag_group ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.tag_group; DROP POLICY IF EXISTS all_access_insert ON public.tag_group; DROP POLICY IF EXISTS all_access_update ON public.tag_group; DROP POLICY IF EXISTS all_access_delete ON public.tag_group;
 
-    CREATE POLICY "select policy" ON public.voucher FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.voucher FOR INSERT WITH CHECK (true);
-    CREATE POLICY "update policy" ON public.voucher FOR UPDATE USING (true) WITH CHECK (true);
-    CREATE POLICY "delete policy" ON public.voucher FOR DELETE USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.tag_translation ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.tag_translation; DROP POLICY IF EXISTS all_access_insert ON public.tag_translation; DROP POLICY IF EXISTS all_access_update ON public.tag_translation; DROP POLICY IF EXISTS all_access_delete ON public.tag_translation;
 
-  -- device
-  IF to_regclass('public.device') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.device;
-    CREATE POLICY "select policy" ON public.device FOR SELECT USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.user_order ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.user_order; DROP POLICY IF EXISTS all_access_insert ON public.user_order; DROP POLICY IF EXISTS all_access_update ON public.user_order; DROP POLICY IF EXISTS all_access_delete ON public.user_order;
 
-  -- audit_log skipped if not exists
-  IF to_regclass('public.audit_log') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.audit_log;
-    CREATE POLICY "select policy" ON public.audit_log FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.audit_log FOR INSERT WITH CHECK (true);
-    CREATE POLICY "update policy" ON public.audit_log FOR UPDATE USING (true) WITH CHECK (true);
-  END IF;
+ALTER TABLE IF EXISTS public.user_otp ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.user_otp; DROP POLICY IF EXISTS all_access_insert ON public.user_otp; DROP POLICY IF EXISTS all_access_update ON public.user_otp; DROP POLICY IF EXISTS all_access_delete ON public.user_otp;
 
-  -- currency
-  IF to_regclass('public.currency') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.currency;
-    CREATE POLICY "select policy" ON public.currency FOR SELECT USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.user_profile ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.user_profile; DROP POLICY IF EXISTS all_access_insert ON public.user_profile; DROP POLICY IF EXISTS all_access_update ON public.user_profile; DROP POLICY IF EXISTS all_access_delete ON public.user_profile;
 
-  -- tag_group
-  IF to_regclass('public.tag_group') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.tag_group;
-    DROP POLICY IF EXISTS "insert policy" ON public.tag_group;
-    DROP POLICY IF EXISTS "update policy" ON public.tag_group;
-    DROP POLICY IF EXISTS "delete policy" ON public.tag_group;
+ALTER TABLE IF EXISTS public.user_profile_bundle ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.user_profile_bundle; DROP POLICY IF EXISTS all_access_insert ON public.user_profile_bundle; DROP POLICY IF EXISTS all_access_update ON public.user_profile_bundle; DROP POLICY IF EXISTS all_access_delete ON public.user_profile_bundle;
 
-    CREATE POLICY "select policy" ON public.tag_group FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.tag_group FOR INSERT WITH CHECK (true);
-    CREATE POLICY "update policy" ON public.tag_group FOR UPDATE USING (true) WITH CHECK (true);
-    CREATE POLICY "delete policy" ON public.tag_group FOR DELETE USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.user_wallet ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.user_wallet; DROP POLICY IF EXISTS all_access_insert ON public.user_wallet; DROP POLICY IF EXISTS all_access_update ON public.user_wallet; DROP POLICY IF EXISTS all_access_delete ON public.user_wallet;
 
-  -- tag
-  IF to_regclass('public.tag') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.tag;
-    DROP POLICY IF EXISTS "insert policy" ON public.tag;
-    DROP POLICY IF EXISTS "update policy" ON public.tag;
-    DROP POLICY IF EXISTS "delete policy" ON public.tag;
+ALTER TABLE IF EXISTS public.user_wallet_transaction ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.user_wallet_transaction; DROP POLICY IF EXISTS all_access_insert ON public.user_wallet_transaction; DROP POLICY IF EXISTS all_access_update ON public.user_wallet_transaction; DROP POLICY IF EXISTS all_access_delete ON public.user_wallet_transaction;
 
-    CREATE POLICY "select policy" ON public.tag FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.tag FOR INSERT WITH CHECK (true);
-    CREATE POLICY "update policy" ON public.tag FOR UPDATE USING (true) WITH CHECK (true);
-    CREATE POLICY "delete policy" ON public.tag FOR DELETE USING (true);
-  END IF;
+ALTER TABLE IF EXISTS public.users_copy ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.users_copy; DROP POLICY IF EXISTS all_access_insert ON public.users_copy; DROP POLICY IF EXISTS all_access_update ON public.users_copy; DROP POLICY IF EXISTS all_access_delete ON public.users_copy;
 
-  -- bundle_tag
-  IF to_regclass('public.bundle_tag') IS NOT NULL THEN
-    DROP POLICY IF EXISTS "select policy" ON public.bundle_tag;
-    DROP POLICY IF EXISTS "insert policy" ON public.bundle_tag;
-    DROP POLICY IF EXISTS "update policy" ON public.bundle_tag;
-    DROP POLICY IF EXISTS "delete policy" ON public.bundle_tag;
+ALTER TABLE IF EXISTS public.voucher ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS all_access_select ON public.voucher; DROP POLICY IF EXISTS all_access_insert ON public.voucher; DROP POLICY IF EXISTS all_access_update ON public.voucher; DROP POLICY IF EXISTS all_access_delete ON public.voucher;
 
-    CREATE POLICY "select policy" ON public.bundle_tag FOR SELECT USING (true);
-    CREATE POLICY "insert policy" ON public.bundle_tag FOR INSERT WITH CHECK (true);
-    CREATE POLICY "update policy" ON public.bundle_tag FOR UPDATE USING (true) WITH CHECK (true);
-    CREATE POLICY "delete policy" ON public.bundle_tag FOR DELETE USING (true);
-  END IF;
+-- storage.objects (read policy kept)
+DROP POLICY IF EXISTS "Enable insert for all users" ON storage.objects;
+DROP POLICY IF EXISTS "Enable update for all users" ON storage.objects;
+DROP POLICY IF EXISTS "Enable delete for all users" ON storage.objects;
+DROP POLICY IF EXISTS "select media" ON storage.objects;
+DROP POLICY IF EXISTS "insert media" ON storage.objects;
+DROP POLICY IF EXISTS "update media" ON storage.objects;
+DROP POLICY IF EXISTS "delete media" ON storage.objects;
 
-END $$;
+-- storage.buckets (read policy kept)
+DROP POLICY IF EXISTS "Enable insert for all users " ON storage.buckets;
+DROP POLICY IF EXISTS "Enable update for all users" ON storage.buckets;
+DROP POLICY IF EXISTS "Enable delete for all users" ON storage.buckets;
+ 

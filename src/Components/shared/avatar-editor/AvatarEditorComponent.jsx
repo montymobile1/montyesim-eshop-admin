@@ -3,7 +3,14 @@ import { FormHelperText, IconButton, Slider } from "@mui/material";
 import { useRef, useState } from "react";
 import AvatarEditor from "react-avatar-editor";
 import Dropzone from "react-dropzone";
+import {
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_LABEL,
+  UPLOAD_IMAGE_TYPES,
+} from "../../../core/vairables/Uploads";
 import MuiModal from "../../Modals/MuiModal";
+
+const sizeInKB = (bytes) => (bytes / 1024).toFixed(2);
 
 const AvatarEditorComponent = ({ open, value, onClose, updateImage }) => {
   const [image, setImage] = useState(value);
@@ -20,6 +27,13 @@ const AvatarEditorComponent = ({ open, value, onClose, updateImage }) => {
       if (cropRef?.current) {
         const result = await fetch(dataUrl);
         const blob = await result.blob();
+        // the cropped icon is re-encoded as PNG, which can be larger than the file dropped
+        if (blob.size > MAX_UPLOAD_BYTES) {
+          setError({
+            message: `The cropped icon (${sizeInKB(blob.size)} KB) is larger than ${MAX_UPLOAD_LABEL}; zoom in or use a smaller image`,
+          });
+          return;
+        }
         setImage(URL.createObjectURL(blob));
         updateImage(blob);
         onClose();
@@ -77,28 +91,30 @@ const AvatarEditorComponent = ({ open, value, onClose, updateImage }) => {
         </div>
       ) : (
         <div className={"flex flex-col gap-[0.5rem]"}>
+          {/* TEOS-190: the same types and size as the API (PNG, JPEG, WebP up to 1 MB) */}
           <Dropzone
-            accept={{
-              "image/png": [],
-            }}
-            maxSize={100 * 1024} //100kb
+            accept={UPLOAD_IMAGE_TYPES}
+            maxSize={MAX_UPLOAD_BYTES}
             onDropRejected={(fileRejections) =>
               fileRejections.forEach(({ file, errors }) => {
                 errors.forEach((e) => {
                   if (e.code === "file-too-large") {
-                    const sizeInKB = (file.size / 1024).toFixed(2);
-                    const customError = {
+                    setError({
                       ...e,
-                      message: `File (${sizeInKB} KB) is larger than 100 KB`,
-                    };
-                    setError(customError);
+                      message: `File (${sizeInKB(file.size)} KB) is larger than ${MAX_UPLOAD_LABEL}`,
+                    });
+                  } else if (e.code === "file-invalid-type") {
+                    setError({ ...e, message: "The icon must be a PNG, JPEG or WebP image" });
                   } else {
                     setError(e);
                   }
                 });
               })
             }
-            onDrop={(acceptedFiles) => handleDrop(acceptedFiles)}
+            onDrop={(acceptedFiles) => {
+              setError("");
+              handleDrop(acceptedFiles);
+            }}
           >
             {({ getRootProps, getInputProps }) => (
               <section className="wfp--dropzone w-full bg-(--color-primary-50) cursor-pointer border rounded-xl border-dashed border-gray-200 w-[200px] h-[200px] justify-center items-center">

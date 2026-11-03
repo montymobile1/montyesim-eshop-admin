@@ -1,206 +1,51 @@
-import { api } from "./apiInstance";
-import supabase from "./supabase";
+import { api } from "./axios";
 
-export const getAllRules = async ({ page, pageSize, name, action, event }) => {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  try {
-    /*EXPLANATION: I created a new SQL view that casts the id to text to enable filtering using partial matches*/
-    const res = await api(() => {
-      let query = supabase.from("promotion_rule").select(
-        `*,
-    promotion_rule_action (
-      id,name
-    ),
-    promotion_rule_event(
-     id,name
-    )
-  `,
-        { count: "exact" }
-      );
-      if (name?.trim()) {
-        query = query.ilike("id_text", `%${name}%`);
-      }
-      if (action !== null) {
-        query = query.eq("promotion_rule_action_id", action);
-      }
-      if (event !== null) {
-        query = query.eq("promotion_rule_event_id", event);
-      }
-      query = query.range(from, to).order("created_at", { ascending: false });
+/*
+  MS-5088: promotion rules on the admin API (backend MS-5087).
+  Lists come back as res.data.data = { data: [...], total_count }.
+*/
 
-      return query;
-    });
+// GET /promotion-rules?search&action_id&event_id&page&page_size
+export const getAllRules = (params) => api.get("promotion-rules", { params });
 
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
+// GET /promotion-rules/actions -> res.data.data = [{ id, name }]
+export const getAllActions = () => api.get("promotion-rules/actions");
 
-export const getAllRulesDropdown = async ({
-  page = 1,
-  pageSize = 10,
-  search = "",
-} = {}) => {
-  try {
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
+// GET /promotion-rules/events -> res.data.data = [{ id, name }]
+export const getAllEvents = () => api.get("promotion-rules/events");
 
-    const res = await api(() => {
-      let query = supabase.from("promotion_rule").select(
-        `*,
-          promotion_rule_action(id, name),
-          promotion_rule_event(id, name)`,
-        { count: "exact" }
-      );
-      if (search.trim() !== "") {
-        query = query.ilike(`name`, `%${search}%`);
-      }
-      query = query.range(from, to).order("created_at", { ascending: false });
-      return query;
-    });
-    return res;
-  } catch (err) {
-    return { data: null, error: err, count: 0 };
-  }
-};
-
-export const getAllActions = async () => {
-  try {
-    const res = await api(() => {
-      let query = supabase
-        .from("promotion_rule_action")
-        .select(`*`, { count: "exact" });
-
-      return query;
-    });
-
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const getAllEvents = async () => {
-  try {
-    const res = await api(() => {
-      let query = supabase
-        .from("promotion_rule_event")
-        .select(`*`, { count: "exact" });
-
-      return query;
-    });
-
-    return res;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const AddRule = async (payload) => {
-  try {
-    const matchyItem = {
-      promotion_rule_action_id: payload?.promotion_rule_action_id,
-      promotion_rule_event_id: payload?.promotion_rule_event_id,
-      max_usage: payload?.max_usage,
-    };
-
-    const existing = await api(() => {
-      let query = supabase
-        .from("promotion_rule")
-        .select("promotion_rule_action_id,promotion_rule_event_id,max_usage")
-        .match(matchyItem);
-      return query;
-    });
-
-    if (existing?.error) {
-      return existing;
-    } else {
-      if (existing?.data?.length === 0) {
-        const res = await api(() => {
-          let query = supabase.from("promotion_rule").insert([payload]);
-
-          return query;
-        });
-
-        return res;
-      } else {
-        throw new Error(
-          "A rule with the same action, event, and usage limit already exists."
-        );
-      }
-    }
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const deleteRule = async (ruleId) => {
-  const fetchRes = await api(() => {
-    let query = supabase
-      .from("promotion")
-      .select("*, promotion_rule(id)")
-      .eq("rule_id", ruleId);
-    return query;
+// POST /promotion-rules { promotion_rule_action_id, promotion_rule_event_id, max_usage, beneficiary }
+// -> 201; 409 duplicate_rule
+export const AddRule = ({
+  promotion_rule_action_id,
+  promotion_rule_event_id,
+  max_usage,
+  beneficiary,
+}) =>
+  api.post("promotion-rules", {
+    promotion_rule_action_id,
+    promotion_rule_event_id,
+    max_usage,
+    beneficiary,
   });
 
-  if (fetchRes?.error) return fetchRes;
-
-  if (fetchRes?.data && fetchRes?.data?.length > 0) {
-    throw new Error(
-      "This rule cannot be deleted because it is already linked to an existing promotion"
-    );
-  }
-
-  const res = await api(() => {
-    let query = supabase.from("promotion_rule").delete().in("id", [ruleId]);
-
-    return query;
+// PUT /promotion-rules/{id} same body -> 200; 409 duplicate_rule
+export const editRule = ({
+  id,
+  promotion_rule_action_id,
+  promotion_rule_event_id,
+  max_usage,
+  beneficiary,
+}) =>
+  api.put(`promotion-rules/${id}`, {
+    promotion_rule_action_id,
+    promotion_rule_event_id,
+    max_usage,
+    beneficiary,
   });
 
-  return res;
-};
+// DELETE /promotion-rules/{id} -> 204; 409 rule_in_use
+export const deleteRule = (ruleId) => api.delete(`promotion-rules/${ruleId}`);
 
-export const editRule = async (payload) => {
-  try {
-    const { id, ...payloadWithoutId } = payload;
-    const matchyItem = {
-      promotion_rule_action_id: payload?.promotion_rule_action_id,
-      promotion_rule_event_id: payload?.promotion_rule_event_id,
-      max_usage: payload?.max_usage,
-    };
-
-    const existing = await api(() => {
-      let query = supabase
-        .from("promotion_rule")
-        .select("promotion_rule_action_id,promotion_rule_event_id,max_usage")
-        .match(matchyItem)
-        .not("id", "eq", id);
-      return query;
-    });
-
-    if (existing?.error) {
-      return existing;
-    } else {
-      if (existing?.data?.length === 0) {
-        const res = await api(() => {
-          let query = supabase
-            .from("promotion_rule")
-            .update(payloadWithoutId)
-            .eq("id", payload?.id);
-
-          return query;
-        });
-
-        return res;
-      } else {
-        throw new Error(
-          "A rule with the same action, event, and usage limit already exists."
-        );
-      }
-    }
-  } catch (error) {
-    throw error;
-  }
-};
+// Shared helper, defined once in ./axios (kept here so pages can import it with the API).
+export { getApiErrorCode } from "./axios";

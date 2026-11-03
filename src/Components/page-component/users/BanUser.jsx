@@ -1,7 +1,6 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import * as yup from "yup";
 //COMPONENT
@@ -13,24 +12,16 @@ import dayjs from "dayjs";
 import {
   banUser,
   DEFAULT_BAN_DAYS,
+  getApiErrorCode,
   HOURS_PER_DAY,
+  MAX_BAN_HOURS,
   unbanUser,
 } from "../../../core/apis/usersAPI";
+import { reasonSchema } from "../../../core/helpers/reasonSchema";
 import {
   FormDropdownList,
   FormInput,
 } from "../../form-component/FormComponent";
-
-const reasonSchema = yup
-  .string()
-  .label("Reason")
-  .max(500)
-  .required()
-  .test(
-    "not-only-spaces",
-    "Reason cannot be only spaces",
-    (value) => value != null && value.trim().length > 0,
-  );
 
 /*
   The ban is always stored in hours, but a ban is rarely thought of in hours,
@@ -48,8 +39,8 @@ const toHours = (duration, unit) =>
   Number(duration) * (unit?.hours || DEFAULT_BAN_UNIT.hours);
 
 /*
-  No upper bound: the admin enters whatever duration the ban needs, the 365
-  days of the story is only the value the field starts with.
+  The 365 days of the story is only the value the field starts with; the API
+  accepts up to MAX_BAN_HOURS (10 years), checked again on submit in hours.
 */
 const banSchema = yup.object().shape({
   duration: yup
@@ -67,11 +58,11 @@ const banSchema = yup.object().shape({
     .label("Ban duration unit")
     .nullable()
     .required("Ban duration unit is required"),
-  reason: reasonSchema,
+  reason: reasonSchema(),
 });
 
 const unbanSchema = yup.object().shape({
-  reason: reasonSchema,
+  reason: reasonSchema(),
 });
 
 // Reads the duration back in both units, so whichever one the admin did not
@@ -100,12 +91,13 @@ const formatDuration = (duration, unit) => {
           mandatory reason.
   Unban : mandatory reason only.
 
-  The action is only offered to super admins by the caller
-  (src/pages/users/UsersPage.jsx via useIsSuperAdmin).
+  Both are done by the API (POST /users/{id}/ban, /unban), which bans the
+  account in the auth service and writes the audit row itself (MS-5079). The action is only
+  offered to admins holding admin.users.ban by the caller
+  (src/pages/users/UsersPage.jsx via usePermission).
 */
 const BanUser = ({ user, onClose, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const adminId = useSelector((state) => state.authentication?.user_info?.id);
 
   const isBanned = !!user?.is_banned;
 
@@ -113,6 +105,7 @@ const BanUser = ({ user, onClose, onSuccess }) => {
     control,
     handleSubmit,
     watch,
+    setError,
     formState: { isValid },
   } = useForm({
     defaultValues: {
@@ -129,38 +122,86 @@ const BanUser = ({ user, onClose, onSuccess }) => {
   const userLabel = user?.email || user?.id;
 
   const onSubmit = (values) => {
+    // Double-click guard: the dialog ignores a second submit while one runs.
+    if (isSubmitting) return;
+
+    const reason = values?.reason?.trim();
+    const hours = toHours(values?.duration, values?.unit);
+
+    if (!isBanned && hours > MAX_BAN_HOURS) {
+      setError("duration", {
+        type: "max",
+        message: `Ban duration cannot exceed ${MAX_BAN_HOURS} hours`,
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     const request = isBanned
-      ? unbanUser({
-          userId: user?.id,
-          reason: values?.reason?.trim(),
-          adminId,
-          previousBannedUntil: user?.banned_until || null,
-        })
-      : banUser({
-          userId: user?.id,
-          hours: toHours(values?.duration, values?.unit),
-          reason: values?.reason?.trim(),
-          adminId,
-        });
+      ? unbanUser({ id: user?.id, reason })
+      : banUser({ id: user?.id, hours, reason });
 
     request
       .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-          return;
-        }
+        const result = res?.data?.data;
+        toast.success(
+          isBanned
+            ? "The ban has been removed and the user can access the platform again."
+            : `The user has been banned for ${result?.hours_banned ?? hours} hour(s).`,
+        );
+        onSuccess?.();
+        onClose();
+      })
+      .catch((error) => {
+        const status = error?.response?.status;
+        const code = getApiErrorCode(error);
 
-        toast.success(res?.data?.message);
-        if (res?.auditError) {
+        if (code === "cannot_ban_self") {
+          // TEOS-111: the API refuses an admin's own account (409), nothing changed.
+          toast.error(
+            isBanned
+              ? "You cannot unban your own account."
+              : "You cannot ban your own account.",
+          );
+          onClose();
+        } else if (
+          error?.response?.data?.developerMessage === "session_revoke_failed"
+        ) {
+          // TEOS-111: 502 after the ban was applied and audited; only the
+          // sign-out of the user's open sessions failed.
           toast.warn(
-            `The user was updated but the audit log failed: ${res.auditError}`,
+            "The user has been banned, but their open sessions could not be signed out. They end when their current access token expires.",
+          );
+          onSuccess?.();
+          onClose();
+        } else if (code === "already_banned") {
+          toast.info("This user is already banned.");
+          onSuccess?.();
+          onClose();
+        } else if (code === "not_banned") {
+          toast.info("This user is not banned.");
+          onSuccess?.();
+          onClose();
+        } else if (status === 404) {
+          toast.info("This user no longer exists.");
+          onSuccess?.();
+          onClose();
+        } else if (status === 403) {
+          // TEOS-151: permission message, the dialog closes, nothing changed
+          toast.error(error?.message);
+          onClose();
+        } else if (status === 422 && !isBanned) {
+          setError("duration", {
+            type: "server",
+            message: error?.message || "Invalid ban duration",
+          });
+        } else {
+          toast.error(
+            error?.message ||
+              (isBanned ? "Failed to unban the user" : "Failed to ban the user"),
           );
         }
-
-        onSuccess();
-        onClose();
       })
       .finally(() => {
         setIsSubmitting(false);

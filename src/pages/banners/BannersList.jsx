@@ -1,5 +1,6 @@
 import SearchIcon from "@mui/icons-material/Search";
 import {
+  Button,
   Card,
   FormControl,
   Grid2,
@@ -7,6 +8,7 @@ import {
   TablePagination,
   TextField,
 } from "@mui/material";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -15,82 +17,101 @@ import MuiModal from "../../Components/Modals/MuiModal";
 import RowComponent from "../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../Components/shared/table-component/TableComponent";
 import { deleteBanner, getAllBanners } from "../../core/apis/bannersAPI";
+import useUrlQueries, {
+  useLastValidPage,
+} from "../../core/custom-hook/useUrlQueries";
+import usePermission from "../../core/hooks/usePermission";
+import { PERMISSIONS } from "../../core/vairables/Permissions";
 
-const BundleList = () => {
+const DEFAULT_QUERIES = { name: "", pageSize: 10, page: 0 };
+
+const toNumber = (value, fallback) => {
+  const number = Number.parseInt(value, 10);
+  return Number.isNaN(number) || number < 0 ? fallback : number;
+};
+
+const readQueries = (searchParams) => ({
+  name: searchParams.get("name") || "",
+  pageSize: toNumber(searchParams.get("pageSize"), 10) || 10,
+  page: toNumber(searchParams.get("page"), 0),
+});
+
+const BannersList = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const canWrite = usePermission(PERMISSIONS.BANNERS_WRITE);
+  // TEOS-289: the URL is the source of truth (TEOS-287): the table follows Back / Forward,
+  // the search box too
+  const [searchQueries, setSearchQueries] = useUrlQueries(readQueries, {
+    onUrlChange: (next) => setSearch(next.name),
+  });
+  const [search, setSearch] = useState(searchQueries.name);
   const [openDelete, setOpenDelete] = useState({ open: false, data: null });
-  const [data, setData] = useState([]);
-  const [search, setSearch] = useState("");
-  const [totalRows, setTotalRows] = useState(0);
-  const [searchQueries, setSearchQueries] = useState({
-    name: "",
-    pageSize: 10,
-    page: 0,
+  const [deleting, setDeleting] = useState(false);
+
+  const { data, isFetching, isError, error } = useQuery({
+    queryKey: ["banners", searchQueries],
+    queryFn: () =>
+      getAllBanners({
+        page: searchQueries.page + 1,
+        page_size: searchQueries.pageSize,
+        search: searchQueries.name?.trim() || undefined,
+      }).then((res) => res?.data?.data),
+    placeholderData: keepPreviousData,
+  });
+
+  useEffect(() => {
+    if (isError && !error?.isForbidden) toast.error("Fail to display data");
+  }, [isError]);
+
+  const rows = isError ? [] : data?.data || [];
+  const totalRows = data?.total_count || 0;
+
+  // TEOS-289: a page past the end (stale URL, rows removed) moves to the last valid page,
+  // replacing the out-of-range URL (TEOS-286 / TEOS-287).
+  useLastValidPage({
+    page: searchQueries.page,
+    pageSize: searchQueries.pageSize,
+    totalRows,
+    rowCount: rows.length,
+    isFetching,
+    isError,
+    onChange: (page) =>
+      setSearchQueries({ ...searchQueries, page }, { replace: true }),
   });
 
   const handleDeleteBanner = (banner) => {
+    if (deleting) return;
+    setDeleting(true);
     deleteBanner(banner?.id)
-      .then((res) => {
-        if (res?.status >= 200 && res?.status < 300) {
-          toast.success("Banner deleted successfully");
-          getBanners();
-        } else {
-          toast.error(res?.error);
+      .then(() => {
+        toast.success("Banner deleted successfully");
+        // deleting the last row of a page moves back one page
+        if (rows.length === 1 && searchQueries.page > 0) {
+          setSearchQueries({ ...searchQueries, page: searchQueries.page - 1 });
         }
       })
       .catch((error) => {
-        toast.error(error?.message || "Failed to delete banner");
-      })
-      .finally(() => {
-        setOpenDelete({ data: null, open: false });
-      });
-  };
-
-  const getBanners = async () => {
-    setLoading(true);
-
-    const { name, page, pageSize } = searchQueries;
-
-    getAllBanners(page, pageSize, name)
-      .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-          setLoading(false);
-          setData([]);
-          setTotalRows(0);
+        if (error?.response?.status === 404) {
+          toast.info("This banner was already deleted.");
         } else {
-          setTotalRows(res?.count);
-          setData(
-            res?.data?.map((el) => ({
-              ...el,
-              ...el?.metadata,
-            }))
-          );
+          toast.error(error?.message || "Failed to delete banner");
         }
       })
-      .catch((e) => {
-        toast.error(e?.message || "Fail to display data");
-      })
       .finally(() => {
-        setLoading(false);
+        setDeleting(false);
+        setOpenDelete({ data: null, open: false });
+        queryClient.invalidateQueries({ queryKey: ["banners"] });
       });
   };
 
-  useEffect(() => {
-    getBanners();
-  }, [searchQueries]);
-
   const resetFilters = () => {
-    setSearchQueries({ ...searchQueries, name: "" });
+    setSearchQueries(DEFAULT_QUERIES);
     setSearch("");
   };
 
   const applyFilter = () => {
-    setSearchQueries({
-      ...searchQueries,
-      name: search,
-    });
+    setSearchQueries({ ...searchQueries, name: search, page: 0 });
   };
 
   const tableHeaders = [
@@ -145,21 +166,21 @@ const BundleList = () => {
       </Filters>
 
       <TableComponent
-        loading={loading}
+        loading={isFetching && !data}
         dataPerPage={searchQueries?.pageSize}
-        tableData={data}
+        tableData={rows}
         tableHeaders={tableHeaders}
         actions={true}
-        onAdd={() => navigate("/banners/add")}
+        onAdd={canWrite ? () => navigate("/banners/add") : undefined}
       >
-        {data?.map((el) => (
+        {rows.map((el) => (
           <RowComponent
             key={el?.id}
             actions={true}
-            onEdit={() => {
-              navigate(`/banners/${el?.id}`);
-            }}
-            onDelete={() => setOpenDelete({ data: el, open: true })}
+            onEdit={canWrite ? () => navigate(`/banners/${el?.id}`) : undefined}
+            onDelete={
+              canWrite ? () => setOpenDelete({ data: el, open: true }) : undefined
+            }
           >
             <TableCell {...tableCellStyles}>{el?.title}</TableCell>
             <TableCell {...tableCellStyles}>{el?.description}</TableCell>
@@ -170,14 +191,16 @@ const BundleList = () => {
       </TableComponent>
       <TablePagination
         component="div"
-        count={totalRows || 0}
+        count={totalRows}
         page={searchQueries?.page}
-        onPageChange={(value, page) =>
-          setSearchQueries({ ...searchQueries, page: page })
-        }
+        onPageChange={(_, page) => setSearchQueries({ ...searchQueries, page })}
         rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
-          setSearchQueries({ ...searchQueries, pageSize: e.target.value });
+          setSearchQueries({
+            ...searchQueries,
+            page: 0,
+            pageSize: e.target.value,
+          });
         }}
       />
       {openDelete?.open && (
@@ -186,6 +209,26 @@ const BundleList = () => {
           onClose={() => setOpenDelete({ data: null, open: false })}
           title={"Notice!"}
           onConfirm={() => handleDeleteBanner(openDelete?.data)}
+          // MS-5059: the confirm button is disabled while the delete runs
+          buttonChildren={
+            <>
+              <Button
+                variant="outlined"
+                onClick={() => setOpenDelete({ data: null, open: false })}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => handleDeleteBanner(openDelete?.data)}
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Confirm"}
+              </Button>
+            </>
+          }
         >
           <p className={"text-center"}>
             Are you sure you want to delete this banner?
@@ -196,4 +239,4 @@ const BundleList = () => {
   );
 };
 
-export default BundleList;
+export default BannersList;

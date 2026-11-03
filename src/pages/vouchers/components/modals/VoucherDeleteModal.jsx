@@ -5,13 +5,15 @@ export default function VoucherDeleteModal({
   setOpenDelete,
   openDelete,
   handleDeleteVoucher,
+  deleting = false,
 }) {
   return (
     <MuiModal
       open={true}
       onClose={() => setOpenDelete({ data: null, open: false })}
       title={"Delete Voucher"}
-      onConfirm={() => handleDeleteVoucher(openDelete?.data)}
+      // ignore repeated clicks while the delete request runs
+      onConfirm={() => !deleting && handleDeleteVoucher(openDelete?.data)}
     >
       <p className={"text-center"}>
         Are you sure you want to delete{" "}

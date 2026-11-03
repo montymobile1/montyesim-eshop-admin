@@ -31,6 +31,10 @@ const MuiModal = ({
   hideSubmit = false,
   displayButtons = true,
   loading = false,
+  // TEOS-179: while the confirmed action runs, both buttons are disabled and
+  // the confirm button shows a spinner and submittingButtonName.
+  submitting = false,
+  submittingButtonName,
 }) => {
   const theme = useTheme();
   const width = SIZE_MAP[size] || SIZE_MAP.sm;
@@ -121,7 +125,11 @@ const MuiModal = ({
                 >
                   {buttonChildren || (
                     <>
-                      <Button variant="outlined" onClick={onClose}>
+                      <Button
+                        variant="outlined"
+                        onClick={onClose}
+                        disabled={submitting}
+                      >
                         {cancelButtonName}
                       </Button>
                       {!hideSubmit && (
@@ -129,8 +137,16 @@ const MuiModal = ({
                           variant="contained"
                           color="primary"
                           onClick={onConfirm}
+                          disabled={submitting}
+                          startIcon={
+                            submitting ? (
+                              <CircularProgress size={16} color="inherit" />
+                            ) : null
+                          }
                         >
-                          {confirmButtonName}
+                          {submitting
+                            ? submittingButtonName || confirmButtonName
+                            : confirmButtonName}
                         </Button>
                       )}
                     </>

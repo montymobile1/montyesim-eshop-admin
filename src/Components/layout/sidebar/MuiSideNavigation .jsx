@@ -1,8 +1,9 @@
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box, Drawer, IconButton, List, useMediaQuery } from "@mui/material";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
+import { hasPermission } from "../../../core/hooks/usePermission";
 import { MenuRoutes } from "../../../core/routes/Pages";
 import { toggleSidebar } from "../../../Redux/reducers/SidebarReducer";
 import IconImage from "../../shared/icon-image/IconImage";
@@ -11,6 +12,25 @@ import MuiDrawerHeader from "./MuiDrawerHeader";
 import ToolTipMenu from "./ToolTipMenu";
 
 const drawerWidthOpen = 250;
+
+/*
+  Keeps the menu entries the admin has the permission for. A group without a
+  link of its own is dropped when none of its children is left.
+*/
+const filterMenuByPermissions = (items, permissions) =>
+  items?.reduce((acc, item) => {
+    if (!hasPermission(permissions, item?.permission)) return acc;
+
+    if (item?.children?.length > 0) {
+      const children = filterMenuByPermissions(item.children, permissions);
+      if (children.length === 0 && !item?.uri) return acc;
+      acc.push({ ...item, children });
+    } else {
+      acc.push(item);
+    }
+    return acc;
+  }, []) || [];
+
 const drawerWidthClosed = 90;
 
 const MuiSideNavigation = () => {
@@ -18,7 +38,13 @@ const MuiSideNavigation = () => {
   const isSmall = useMediaQuery("(max-width: 1024px)");
   const dispatch = useDispatch();
 
-  const user = useSelector((state) => state.authentication);
+  const permissions = useSelector(
+    (state) => state.authentication?.user_info?.permissions
+  );
+  const menuItems = useMemo(
+    () => filterMenuByPermissions(MenuRoutes, permissions),
+    [permissions]
+  );
   const location = useLocation();
   const pathName = location.pathname;
   const [openMenus, setOpenMenus] = useState(() => {
@@ -65,10 +91,7 @@ const MuiSideNavigation = () => {
         );
       }
 
-      return item?.superAdminAccess &&
-        !user?.user_info?.email?.toLowerCase()?.includes("superadmin") ? (
-        ""
-      ) : (
+      return (
         <MenuItems
           key={item?.recordGuid || index}
           item={item}
@@ -131,7 +154,7 @@ const MuiSideNavigation = () => {
         )}{" "}
       </MuiDrawerHeader>{" "}
       <Box sx={{ flexGrow: 1, overflow: "auto" }}>
-        {MenuRoutes.length > 0 && <List>{renderMenu(MenuRoutes)}</List>}{" "}
+        {menuItems.length > 0 && <List>{renderMenu(menuItems)}</List>}{" "}
       </Box>{" "}
     </Drawer>
   );

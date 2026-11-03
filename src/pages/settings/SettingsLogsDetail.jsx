@@ -1,58 +1,74 @@
-import { Card, CardContent } from "@mui/material";
-import clsx from "clsx";
-import React from "react";
+import { Button, Card, CardContent } from "@mui/material";
+import { useState } from "react";
+import { displayValue } from "../../core/helpers/auditJson";
 
+const MAX_LENGTH = 120;
+
+// Long values are cut, with a button to show all of it.
+const LongValue = ({ text }) => {
+  const [expanded, setExpanded] = useState(false);
+  if (text.length <= MAX_LENGTH) return <span>{text}</span>;
+  return (
+    <span>
+      {expanded ? text : `${text.substring(0, MAX_LENGTH)}...`}{" "}
+      <Button size="small" onClick={() => setExpanded(!expanded)}>
+        {expanded ? "Show less" : "Show more"}
+      </Button>
+    </span>
+  );
+};
+
+/*
+  One settings save: the server's changes[] (MS-5047). No JSON parsing or
+  diffing here: the API sends only the keys whose value changed.
+*/
 const SettingsLogsDetail = ({ data }) => {
-  const oldData = JSON.parse(data?.old_data);
-  const newData = JSON.parse(data?.new_data);
-  const oldObj = Object.fromEntries(oldData.map((i) => [i.key, i.value]));
-  const newObj = Object.fromEntries(newData.map((i) => [i.key, i.value]));
+  if (data?.parse_error) {
+    return <p className={"p-2"}>Details unavailable</p>;
+  }
+
+  const changes = data?.changes || [];
+  if (changes.length === 0) {
+    return <p className={"p-2"}>No changes recorded</p>;
+  }
 
   return (
-    <div className={"grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4"}>
-      <Card>
-        <CardContent className={"flex flex-col gap-2"}>
-          <h3>Old - {oldData?.length} items</h3>
-          {oldData?.map((old_row) => {
-            const changed =
-              oldObj[old_row.key] !== newObj[old_row.key] ||
-              !Object.prototype.hasOwnProperty.call(newObj, old_row.key);
-            return (
-              <div
-                className={clsx("grid grid-cols-1 sm:grid-cols-2 sm:gap-4", {
-                  "px-2 rounded bg-red-500": changed,
-                })}
-                key={old_row?.key}
-              >
-                <label className={"break-all"}>{old_row?.key}</label>
-                <p className={"break-all"}>{old_row?.value}</p>
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className={"flex flex-col gap-2"}>
-          <h3>New - {newData?.length} items</h3>
-          {newData?.map((new_row) => {
-            const changed =
-              oldObj[new_row.key] !== newObj[new_row.key] ||
-              !Object.prototype.hasOwnProperty.call(oldObj, new_row.key);
-            return (
-              <div
-                className={clsx("grid grid-cols-1 sm:grid-cols-2 sm:gap-4", {
-                  "px-2 rounded bg-green-400": changed,
-                })}
-                key={new_row?.key}
-              >
-                <label className={"break-all"}>{new_row?.key}</label>
-                <p className={"break-all"}>{new_row?.value}</p>
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
-    </div>
+    <Card>
+      <CardContent className={"flex flex-col gap-2"}>
+        <h3>{changes.length} changed</h3>
+        {changes.map((change) => {
+          const created = change?.old_value === null;
+          const removed = change?.new_value === null;
+          return (
+            <div
+              key={change?.key}
+              data-testid="setting-change"
+              className={"grid grid-cols-1 sm:grid-cols-3 sm:gap-4 break-all"}
+            >
+              <label className={"font-semibold"}>{change?.key}</label>
+              <p className={"px-2 rounded bg-red-500"}>
+                {created ? (
+                  "(new)"
+                ) : (
+                  <LongValue
+                    text={displayValue(change?.old_value, change?.redacted)}
+                  />
+                )}
+              </p>
+              <p className={"px-2 rounded bg-green-400"}>
+                {removed ? (
+                  "(removed)"
+                ) : (
+                  <LongValue
+                    text={displayValue(change?.new_value, change?.redacted)}
+                  />
+                )}
+              </p>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
   );
 };
 

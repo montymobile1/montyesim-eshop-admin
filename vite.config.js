@@ -25,6 +25,11 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environment: "jsdom",
+      // Dummy value so the module creating the API client loads in
+      // tests without a .env file. Tests never reach these hosts (APIs are mocked).
+      env: {
+        VITE_API_BASE_URL: "http://localhost:8000",
+      },
       include: ["src/**/*.{test,spec}.{js,jsx,ts,tsx}"],
       coverage: {
         reporter: ["text", "lcov", "html"],

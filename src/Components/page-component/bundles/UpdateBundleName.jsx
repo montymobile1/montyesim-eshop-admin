@@ -6,14 +6,18 @@ import * as yup from "yup";
 //COMPONENT
 import { Close } from "@mui/icons-material";
 import { Button, Dialog, DialogContent, IconButton } from "@mui/material";
-import { updateBundleTitle } from "../../../core/apis/bundlesAPI";
+import {
+  getApiErrorCode,
+  updateBundleTitle,
+} from "../../../core/apis/bundlesAPI";
 import { FormInput } from "../../form-component/FormComponent";
 
+// Same limit as the API and the bundle table (60 characters).
 const schema = yup.object().shape({
   bundle_name: yup
     .string()
     .label("Name")
-    .max(100)
+    .max(60)
     .required()
     .nullable()
     .test(
@@ -23,10 +27,14 @@ const schema = yup.object().shape({
     ),
 });
 
+/*
+  One PATCH /bundles/{id}. The API audits the rename and rotates APP_CACHE_KEY
+  in the same transaction, only when the update succeeded.
+*/
 const UpdateBundleName = ({ onClose, data, refetchData }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { control, handleSubmit, reset } = useForm({
+  const { control, handleSubmit, reset, setError } = useForm({
     defaultValues: {
       bundle_name: "",
     },
@@ -35,14 +43,30 @@ const UpdateBundleName = ({ onClose, data, refetchData }) => {
   });
 
   const handleSubmitForm = (payload) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
-    updateBundleTitle({ ...payload, id: data?.id })
-      .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-        } else {
+    updateBundleTitle({ id: data?.id, bundle_name: payload?.bundle_name?.trim() })
+      .then(() => {
+        toast.success("Bundle display name updated successfully");
+        refetchData();
+        onClose();
+      })
+      .catch((error) => {
+        const status = error?.response?.status;
+        if (getApiErrorCode(error) === "no_change") {
+          toast.info("The display name is unchanged.");
+          onClose();
+        } else if (status === 404) {
+          toast.info("This bundle no longer exists.");
           refetchData();
           onClose();
+        } else if (status === 422) {
+          setError("bundle_name", {
+            type: "server",
+            message: error?.message,
+          });
+        } else {
+          toast.error(error?.message || "Failed to update the display name");
         }
       })
       .finally(() => {
@@ -52,7 +76,7 @@ const UpdateBundleName = ({ onClose, data, refetchData }) => {
 
   useEffect(() => {
     if (data) {
-      reset({ bundle_name: data?.bundle_name });
+      reset({ bundle_name: data?.bundle_name || "" });
     }
   }, [data]);
   return (

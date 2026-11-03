@@ -17,11 +17,11 @@ import RulesList from "../../pages/rules/RulesList";
 import EditSettings from "../../pages/settings/EditSettings";
 import Settings from "../../pages/settings/Settings";
 import SettingsLogs from "../../pages/settings/SettingsLogs";
-import TagList from "../../pages/tags/TagList";
 import UserDetail from "../../pages/users/UserDetail";
 import UsersPage from "../../pages/users/UsersPage";
 import VoucherPage from "../../pages/vouchers/VoucherPage";
 import RouteWrapper from "./RouteWrapper";
+import { PERMISSIONS } from "../vairables/Permissions";
 import HandleBanners from "../../pages/banners/HandleBanners";
 import BannersList from "../../pages/banners/BannersList";
 import GroupsTagReorder from "../../pages/groups/GroupsTagReorder";
@@ -40,6 +40,7 @@ export const privateRoutes = [
         key: "/users",
         name: "Users",
         regex: "^/users/?$",
+        permission: PERMISSIONS.USERS_READ,
       },
       {
         path: "/users",
@@ -47,6 +48,7 @@ export const privateRoutes = [
         key: "/users",
         name: "Users",
         regex: "^/users/?$",
+        permission: PERMISSIONS.USERS_READ,
       },
       {
         path: "/devices",
@@ -54,6 +56,7 @@ export const privateRoutes = [
         key: "/users",
         name: "Devices",
         regex: "^/devices/?$",
+        permission: PERMISSIONS.DEVICES_READ,
       },
       {
         path: "/orders",
@@ -61,6 +64,7 @@ export const privateRoutes = [
         key: "/orders",
         name: "Orders",
         regex: "^/orders/?$",
+        permission: PERMISSIONS.ORDERS_READ,
       },
       {
         path: "/users/:id",
@@ -68,6 +72,7 @@ export const privateRoutes = [
         key: "/users/:id",
         name: "User Detail",
         regex: "^/users/([0-9a-fA-F-]+)$",
+        permission: PERMISSIONS.USERS_READ,
       },
       {
         path: "/contact-us",
@@ -75,6 +80,7 @@ export const privateRoutes = [
         key: "/contact-us",
         name: "Contact Us",
         regex: "^/contact-us/?$",
+        permission: PERMISSIONS.CONTACT_US_READ,
       },
       {
         path: "/bundles",
@@ -82,6 +88,7 @@ export const privateRoutes = [
         key: "/bundles",
         name: "Bundles",
         regex: "^/bundles/?$",
+        permission: PERMISSIONS.BUNDLES_READ,
       },
       {
         path: "/bundles/:bundleId/assign",
@@ -89,6 +96,7 @@ export const privateRoutes = [
         key: "/bundles/:bundleId/assign",
         name: "Assign Bundle To Groups",
         regex: "^/bundles/([0-9a-fA-F-]+)/assign?$",
+        permission: PERMISSIONS.BUNDLES_READ,
       },
       {
         path: "/groups",
@@ -96,6 +104,7 @@ export const privateRoutes = [
         key: "/groups",
         name: "Groups",
         regex: "^/groups/?$",
+        permission: PERMISSIONS.GROUPS_READ,
       },
       {
         path: "/groups/add",
@@ -103,6 +112,7 @@ export const privateRoutes = [
         key: "/groups/add",
         name: "Add Group",
         regex: "^/groups/add?$",
+        permission: PERMISSIONS.GROUPS_READ,
       },
       {
         path: "/groups/:id",
@@ -110,6 +120,7 @@ export const privateRoutes = [
         key: "/groups/:id",
         name: "Edit Group",
         regex: "^/groups/([0-9a-fA-F-]+)$",
+        permission: PERMISSIONS.GROUPS_READ,
       },
       ...(import.meta.env.VITE_GROUP_TAG_ORDERING == "true"
         ? [
@@ -119,22 +130,17 @@ export const privateRoutes = [
               key: "/groups/:id/reorder",
               name: "Reorder Group's Tag",
               regex: "^/groups/([0-9a-fA-F-]+)/reorder$",
+              permission: PERMISSIONS.GROUPS_READ,
             },
           ]
         : []),
-      {
-        path: "/tags",
-        element: <TagList />,
-        key: "/tags",
-        name: "Tags",
-        regex: "^/tags/?$",
-      },
       {
         path: "/rules",
         element: <RulesList />,
         key: "/rules",
         name: "Rules",
         regex: "^/rules/?$",
+        permission: PERMISSIONS.RULES_READ,
       },
       ...(import.meta.env.VITE_APP_VOUCHER_CODE == "true"
         ? [
@@ -144,6 +150,7 @@ export const privateRoutes = [
               key: "/vouchers",
               name: "Vouchers",
               regex: "^/vouchers/?$",
+              permission: PERMISSIONS.VOUCHERS_READ,
             },
           ]
         : []),
@@ -153,7 +160,7 @@ export const privateRoutes = [
         key: "/settings",
         name: "Settings",
         regex: "^/settings/?$",
-        superAdminAccess: true,
+        permission: PERMISSIONS.SETTINGS_READ,
       },
       {
         path: "/settings/edit",
@@ -161,7 +168,7 @@ export const privateRoutes = [
         key: "/settings/edit",
         name: "Edit Settings",
         regex: "^/settings/edit/?$",
-        superAdminAccess: true,
+        permission: PERMISSIONS.SETTINGS_WRITE,
       },
       {
         path: "/settings/logs",
@@ -169,7 +176,7 @@ export const privateRoutes = [
         key: "/settings/logs",
         name: "Settings Logs",
         regex: "^/settings/logs/?$",
-        superAdminAccess: true,
+        permission: PERMISSIONS.SETTINGS_READ,
       },
       {
         path: "/audit-log",
@@ -177,7 +184,7 @@ export const privateRoutes = [
         key: "/audit-log",
         name: "Audit Log",
         regex: "^/audit-log/?$",
-        superAdminAccess: true,
+        permission: PERMISSIONS.AUDIT_READ,
       },
 
       ...(import.meta.env.VITE_SUPPORT_PROMO == "true"
@@ -188,6 +195,7 @@ export const privateRoutes = [
               key: "/promotions",
               name: "Promotions",
               regex: "^/promotions/?$",
+              permission: PERMISSIONS.PROMOTIONS_READ,
             },
             {
               path: "/promotions/add",
@@ -195,6 +203,8 @@ export const privateRoutes = [
               key: "/promotions/add",
               name: "Add Promotion",
               regex: "^/promotions/add?$",
+              // MS-5053 case 16: without write permission the add page shows the permission page.
+              permission: PERMISSIONS.PROMOTIONS_WRITE,
             },
             {
               path: "/promotions/:id",
@@ -202,6 +212,7 @@ export const privateRoutes = [
               key: "/promotions/:id",
               name: "Edit Promotion",
               regex: "^/promotions/([0-9a-fA-F-]+)?$",
+              permission: PERMISSIONS.PROMOTIONS_READ,
             },
             {
               path: "/promo-analysis",
@@ -209,6 +220,7 @@ export const privateRoutes = [
               key: "/promo-analysis",
               name: "Promo Analysis",
               regex: "^/promo-analysis/?$",
+              permission: PERMISSIONS.PROMOTIONS_READ,
             },
           ]
         : []),
@@ -220,6 +232,7 @@ export const privateRoutes = [
               key: "/referrals",
               name: "Referrals",
               regex: "^/referrals/?$",
+              permission: PERMISSIONS.REFERRALS_READ,
             },
           ]
         : []),
@@ -229,6 +242,7 @@ export const privateRoutes = [
         key: "/banners",
         name: "Banners",
         regex: "^/banners/?$",
+        permission: PERMISSIONS.BANNERS_READ,
       },
       {
         path: "/banners/add",
@@ -236,6 +250,7 @@ export const privateRoutes = [
         key: "/banners/add",
         name: "Add Banners",
         regex: "^/banners/add?$",
+        permission: PERMISSIONS.BANNERS_WRITE,
       },
       {
         path: "/banners/:id",
@@ -243,6 +258,7 @@ export const privateRoutes = [
         key: "/banners/:id",
         name: "Edit Banners",
         regex: "^/banners/([0-9a-fA-F-]+)?$",
+        permission: PERMISSIONS.BANNERS_WRITE,
       },
       {
         path: "*",

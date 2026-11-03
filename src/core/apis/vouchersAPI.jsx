@@ -1,88 +1,28 @@
-import { api } from "./apiInstance";
-import supabase from "./supabase";
+import { api } from "./axios";
 
-export const getAllVouchers = async ({ page, pageSize, search }) => {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
+// GET /vouchers?search&status=all|active|inactive|used|expired&page&page_size
+// res.data.data = { data: [{ id, code, amount, currency, is_active, is_used,
+//   is_expired, expired_at, created_at, used_by: {id,email}|null, used_by_user }],
+//   total_count, facets: { all, active, inactive, used, expired } }
+export const getAllVouchers = (params) => api.get("vouchers", { params });
 
-  try {
-    const voucherRes = await api(() => {
-      let query = supabase
-        .from("voucher")
-        .select("*", { count: "exact" })
-        .order("created_at", { ascending: false });
-
-      if (search?.trim()) {
-        query = query.ilike("code", `%${search}%`);
-      }
-
-      query = query.range(from, to);
-
-      return query;
-    });
-
-    const userIds = [
-      ...new Set(
-        voucherRes.data
-          ?.map((order) => order.used_by)
-          .filter((id) => id != null)
-      ),
-    ];
-
-    // Step 3: Fetch user_copy info
-    const { data: users, error } = await supabase
-      .from("users_copy")
-      .select("id,email")
-      .in("id", userIds);
-
-    if (error) throw error;
-
-    const userMap = Object.fromEntries(users?.map((u) => [u.id, u]));
-    const enrichedOrders = voucherRes.data?.map((order) => ({
-      ...order,
-      user: userMap[order.used_by] || null,
-    }));
-
-    return {
-      ...voucherRes,
-      data: enrichedOrders,
-    };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const checkVoucherCodeUnique = async (payload, id) => {
-  return api(() => {
-    let query = supabase
-      .from("voucher")
-      .select("id")
-      .eq("code", payload)
-      .limit(1);
-
-    if (id) {
-      query = query.neq("id", id);
-    }
-
-    return query;
+// POST /vouchers { code?, amount, expired_at } -> 201 with the voucher;
+// without a code the server generates one (TEOS-133). 409 duplicate_code;
+// 422 when the amount is above the VOUCHER_MAX_AMOUNT setting.
+export const addVoucher = ({ code, amount, expired_at }) =>
+  api.post("vouchers", {
+    ...(code ? { code } : {}),
+    amount,
+    expired_at: expired_at || null,
   });
-};
 
-export const toggleVoucherStatus = async ({ id, currentValue }) => {
-  return api(() =>
-    supabase
-      .from("voucher")
-      .update({ is_active: !currentValue })
-      .eq("id", id)
-      .select()
-  );
-};
+// PATCH /vouchers/{id}/status { is_active } -> 409 no_change when already in
+// that state; 409 already_used when activating a redeemed voucher.
+export const toggleVoucherStatus = ({ id, is_active }) =>
+  api.patch(`vouchers/${id}/status`, { is_active });
 
-export const DeleteVoucher = async (voucherId) => {
-  return api(() => supabase.from("voucher").delete().eq("id", voucherId));
-};
-export const addVoucher = async ({ code, amount, expired_at }) => {
-  return api(() =>
-    supabase.from("voucher").insert([{ code, amount, expired_at }])
-  );
-};
+// DELETE /vouchers/{id} -> 204; 409 voucher_used
+export const DeleteVoucher = (voucherId) => api.delete(`vouchers/${voucherId}`);
+
+// Shared helper, defined once in ./axios (kept here so existing imports keep working).
+export { getApiErrorCode } from "./axios";

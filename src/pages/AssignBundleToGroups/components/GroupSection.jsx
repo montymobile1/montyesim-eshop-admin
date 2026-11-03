@@ -1,54 +1,35 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 // MUI imports
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box } from "@mui/material";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import Typography from "@mui/material/Typography";
-import { toast } from "react-toastify";
 import NoDataFound from "../../../Components/shared/fallbacks/no-data-found/NoDataFound";
-import { getTagsByTagGroup } from "../../../core/apis/tagsAPI";
 import { useAssignBundleContext } from "../hooks/AssignBundleContext";
 import GroupSectionSkeleton from "../loaders/GroupSectionSkeleton";
-import GroupTagSkeleton from "../loaders/GroupTagSkeleton";
 import GroupTag from "./GroupTag";
 
-export default function GroupSection({ group }) {
-  const { id, name } = group;
-  const { addToGroupTagMapping, isTagSelected } = useAssignBundleContext();
+/*
+  One group of the assign page. The tags come from the page (one query per
+  selected group, GET /groups/{id}/tags); this component only renders them.
+  TEOS-168: an inactive group is flagged next to its name; its tags can't be
+  newly selected, the ones the bundle still has stay selected (and removable)
+  with a warning, since the page won't save them.
+*/
+export default function GroupSection({ group, tags = [], loading = false }) {
+  const { id, label, name } = group;
+  const inactive = group?.is_active === false;
+  const { isTagSelected } = useAssignBundleContext();
 
-  const [tags, setTags] = useState([]);
   const [expanded, setExpanded] = useState(true);
-  const [loading, setLoading] = useState(false);
 
   const handleChange = () => {
     setExpanded(!expanded);
   };
-
-  const getTags = async () => {
-    setLoading(true);
-
-    try {
-      const { data, error } = await getTagsByTagGroup(id);
-
-      if (error) {
-        throw error;
-      }
-      let tags = data ?? [];
-      setTags(tags);
-      addToGroupTagMapping(id, tags);
-    } catch (e) {
-      toast.error(e?.message || "Fail to display data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getTags();
-  }, []);
 
   const selectedCount = tags.filter((tag) => isTagSelected(tag?.id)).length;
 
@@ -57,23 +38,28 @@ export default function GroupSection({ group }) {
   }
 
   const content = () => {
-    if (loading) {
-      return <GroupTagSkeleton />;
-    } else if (tags.length == 0) {
+    if (tags.length === 0) {
       return <NoDataFound text={"No tags available in this group"} />;
-    } else {
-      return (
-        <Box className="flex gap-2 flex-wrap">
-          {tags?.map((tag) => (
-            <GroupTag selected={false} tag={tag || null} key={tag?.id} />
-          ))}
-        </Box>
-      );
     }
+    return (
+      <Box className="flex gap-2 flex-wrap">
+        {tags.map((tag) => (
+          <GroupTag
+            tag={tag || null}
+            key={tag?.id}
+            disabled={inactive && !isTagSelected(tag?.id)}
+          />
+        ))}
+      </Box>
+    );
   };
-  
+
   return (
-    <Accordion expanded={expanded} onChange={handleChange}>
+    <Accordion
+      expanded={expanded}
+      onChange={handleChange}
+      data-testid={`group-section-${id}`}
+    >
       <AccordionSummary
         expandIcon={
           <ArrowDropDownIcon fontSize="large" sx={{ color: "white" }} />
@@ -105,15 +91,45 @@ export default function GroupSection({ group }) {
             paddingRight: "8px",
           }}
         >
-          <Typography
-            sx={{
-              fontWeight: 500,
-              color: "#ffffff",
-              letterSpacing: "0.01em",
-            }}
+          <Box
+            component="span"
+            sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
           >
-            {name}
-          </Typography>
+            <Typography
+              sx={{
+                fontWeight: 500,
+                color: "#ffffff",
+                letterSpacing: "0.01em",
+              }}
+            >
+              {label ?? name}
+            </Typography>
+            {inactive && selectedCount > 0 && (
+              <Typography
+                component="span"
+                data-testid={`group-inactive-warning-${id}`}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  fontSize: "0.8rem",
+                  fontWeight: 500,
+                  color: "warning.light",
+                }}
+              >
+                <WarningAmberIcon sx={{ fontSize: 16 }} />
+                {"(inactive group – this may affect the bundle's visibility)"}
+              </Typography>
+            )}
+            {inactive && selectedCount === 0 && (
+              <Typography
+                component="span"
+                sx={{ fontSize: "0.8rem", color: "rgba(255, 255, 255, 0.7)" }}
+              >
+                (inactive)
+              </Typography>
+            )}
+          </Box>
           {tags.length > 0 && (
             <Box
               component="span"
@@ -143,8 +159,8 @@ export default function GroupSection({ group }) {
           borderTop: "1px solid #e2e8f0",
         }}
       >
-        <Typography sx={{ color: "#334155", lineHeight: 1.6 }}>
-          <>{content()}</>
+        <Typography component="div" sx={{ color: "#334155", lineHeight: 1.6 }}>
+          {content()}
         </Typography>
       </AccordionDetails>
     </Accordion>

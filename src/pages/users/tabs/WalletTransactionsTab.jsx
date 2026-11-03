@@ -1,24 +1,45 @@
-import React, { useEffect, useState } from "react";
+import { TableCell } from "@mui/material";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import { useEffect, useState } from "react";
+import CountUp from "react-countup";
 import { useParams } from "react-router-dom";
-import { TableCell, TablePagination } from "@mui/material";
 import { toast } from "react-toastify";
-import TagComponent from "../../../Components/shared/tag-component/TagComponent";
+
 import RowComponent from "../../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../../Components/shared/table-component/TableComponent";
-import { getAllWalletTransactions } from "../../../core/apis/usersAPI";
-import CountUp from "react-countup";
+import TablePaginationComponent from "../../../Components/shared/table-component/TablePaginationComponent";
+import TagComponent from "../../../Components/shared/tag-component/TagComponent";
+import { getUserWalletTransactions } from "../../../core/apis/usersAPI";
 
-export default function WalletTransactionsTab() {
+// Wallet transactions of one user: GET /users/{id}/wallet-transactions, with the
+// true total from the API (the legacy RPC returned the page length as the count).
+// TEOS-153: a 404 (user_not_found) is not a load error: the page shows "User not found".
+export default function WalletTransactionsTab({ onNotFound }) {
   const { id } = useParams();
+  const [searchQueries, setSearchQueries] = useState({ pageSize: 10, page: 0 });
 
-  const [totalRows, setTotalRows] = useState(0);
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchQueries, setSearchQueries] = useState({
-    pageSize: 10,
-    page: 0,
+  const { data, isFetching, isError, error } = useQuery({
+    queryKey: ["users", id, "wallet-transactions", searchQueries],
+    queryFn: () =>
+      getUserWalletTransactions(id, {
+        page: searchQueries.page + 1,
+        page_size: searchQueries.pageSize,
+      }).then((res) => res?.data?.data),
+    placeholderData: keepPreviousData,
+    enabled: !!id,
   });
+
+  const notFound = error?.response?.status === 404;
+
+  useEffect(() => {
+    if (!isError || error?.isForbidden) return;
+    if (notFound) onNotFound?.();
+    else toast.error("Failed to load wallet transactions");
+  }, [isError]);
+
+  const rows = isError ? [] : data?.data || [];
+  const totalRows = data?.total_count || 0;
 
   const tableHeaders = [
     { name: "Source" },
@@ -27,49 +48,17 @@ export default function WalletTransactionsTab() {
     { name: "Created At" },
   ];
 
-  const getWalletTransactions = async () => {
-    setLoading(true);
-    try {
-      const { page, pageSize } = searchQueries;
-
-      const res = await getAllWalletTransactions(page, pageSize, id);
-      if (res?.error) throw res.error;
-
-      const rows = res?.data || [];
-      const mapped = rows.map((r) => ({
-        id: r.id,
-        currency: r.currency,
-        status: r.status,
-        source: r.source,
-        amount: r.amount,
-        created_at: r.created_at,
-      }));
-
-      setData(mapped);
-      setTotalRows(res?.count ?? 0);
-    } catch (e) {
-      console.error("Failed to load wallet transactions:", e);
-      toast.error(e?.message || "Failed to load wallet transactions");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getWalletTransactions();
-  }, [searchQueries, id]);
-
   return (
     <>
       <TableComponent
-        loading={loading}
+        loading={isFetching && !data}
         dataPerPage={searchQueries.pageSize}
-        tableData={data}
+        tableData={rows}
         noDataFound={"No Wallet Transactions Found"}
         tableHeaders={tableHeaders}
         actions={false}
       >
-        {data?.map((el, idx) => (
+        {rows.map((el, idx) => (
           <RowComponent key={el?.id || idx} actions={false}>
             <TableCell
               sx={{ minWidth: 180 }}
@@ -82,7 +71,7 @@ export default function WalletTransactionsTab() {
               {el?.currency}{" "}
               <CountUp
                 start={0}
-                end={el?.amount}
+                end={Number(el?.amount) || 0}
                 duration={1.5}
                 separator=","
                 decimals={2}
@@ -100,20 +89,15 @@ export default function WalletTransactionsTab() {
         ))}
       </TableComponent>
 
-      <TablePagination
-        component="div"
-        count={totalRows || 0}
+      <TablePaginationComponent
+        totalRows={totalRows}
         page={searchQueries.page}
+        pageSize={searchQueries.pageSize}
         onPageChange={(_, newPage) => {
           setSearchQueries({ ...searchQueries, page: newPage });
         }}
-        rowsPerPage={searchQueries.pageSize}
         onRowsPerPageChange={(e) => {
-          setSearchQueries({
-            ...searchQueries,
-            pageSize: Number(e.target.value),
-            page: 0,
-          });
+          setSearchQueries({ page: 0, pageSize: Number(e.target.value) });
         }}
       />
     </>

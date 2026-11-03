@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import MainLayout from "../../Components/layout/MainLayout";
 import AuthLayout from "../../Components/layout/AuthLayout";
+import { signInUrl } from "../apis/axios";
 
 const RouteWrapper = ({
   shouldbeLoggedIn,
@@ -15,7 +16,9 @@ const RouteWrapper = ({
   isPrivate,
   isAuthRestricted,
 }) => {
-  const { isAuthenticated } = useSelector((state) => state.authentication);
+  const { isAuthenticated, signOutReason } = useSelector(
+    (state) => state.authentication
+  );
 
   const [open, setOpen] = useState(true);
   const location = useLocation();
@@ -25,9 +28,10 @@ const RouteWrapper = ({
   if (shouldbeLoggedIn && !isAuthenticated) {
     return (
       <Navigate
+        // TEOS-145: the reason of a forced sign-out goes along, so the sign-in page shows it
         to={
           location?.pathname
-            ? `/signin?next=${encodeURIComponent(location.pathname)}`
+            ? signInUrl(location.pathname, signOutReason)
             : "signin"
         }
         replace

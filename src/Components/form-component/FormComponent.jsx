@@ -23,7 +23,6 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import React, { useEffect, useRef, useState } from "react";
-import { useDebouncedCallback } from "use-debounce";
 import AvatarEditorComponent from "../shared/avatar-editor/AvatarEditorComponent";
 
 import DatePicker from "react-datepicker";
@@ -328,101 +327,6 @@ export const FormAvatarEditor = (props) => {
     </>
   );
 };
-export const FormPaginationDropdownList = (props) => {
-  const {
-    value,
-    placeholder,
-    data,
-    disabled,
-    noOptionsText,
-    loading,
-    onChange,
-    accessName,
-
-    helperText,
-    accessValue,
-    handleResetData,
-  } = props;
-
-  const [inputValue, setInputValue] = useState("");
-  const handleOnChange = (selected) => {
-    onChange(selected);
-    if (!selected) {
-      setInputValue("");
-      handleResetData(false, "");
-    }
-  };
-
-  const handleScroll = async (event) => {
-    const target = event.target;
-    if (
-      target.scrollHeight - target.scrollTop === target.clientHeight &&
-      data?.page < data?.total
-    ) {
-      handleResetData(true, inputValue);
-    }
-  };
-  const debouncedFilterOption = useDebouncedCallback(
-    // function
-    (value) => {
-      handleResetData(false, value);
-    },
-    // delay in ms
-    500,
-  );
-
-  return (
-    <Autocomplete
-      size="small"
-      disabled={disabled || false}
-      fullWidth
-      onInputChange={(event, newInputValue, reason) => {
-        if (reason === "input") {
-          setInputValue(newInputValue);
-          debouncedFilterOption(newInputValue);
-        }
-      }}
-      onClose={() => setInputValue("")} // Reset inputValue when the dropdown is closed
-      disableClearable={false}
-      ListboxProps={{
-        onScroll: handleScroll,
-        style: { maxHeight: 200 },
-      }}
-      getOptionLabel={(option) => option?.[accessName]}
-      options={data?.data || []}
-      value={value}
-      filterOptions={(options) => options}
-      isOptionEqualToValue={(option, value) =>
-        option?.[accessValue] === value?.[accessValue]
-      }
-      loadingText={"Loading"}
-      noOptionsText={noOptionsText}
-      loading={loading}
-      onChange={(event, selected) => {
-        handleOnChange(selected);
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          placeholder={placeholder}
-          helperText={helperText}
-          InputProps={{
-            ...params.InputProps,
-            endAdornment: (
-              <React.Fragment>
-                {loading ? (
-                  <CircularProgress color="inherit" size={20} />
-                ) : null}
-                {params.InputProps.endAdornment}
-              </React.Fragment>
-            ),
-          }}
-        />
-      )}
-    />
-  );
-};
-
 export const FormDateRange = (props) => {
   const { value, onChange, disabled, helperText, placeholder } = props;
 

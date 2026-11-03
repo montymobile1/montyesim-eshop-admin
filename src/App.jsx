@@ -3,11 +3,12 @@ import { CssBaseline } from "@mui/material";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useEffect, useMemo } from "react";
 import "react-datepicker/dist/react-datepicker.css";
+import { useDispatch, useSelector } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
-import persistStore from "redux-persist/es/persistStore";
 import { ToastContainer } from "react-toastify";
 import AppRouter from "./core/routes/AppRouter";
-import { store } from "./Redux/store";
+import { fetchUserInfo } from "./Redux/reducers/AuthReducer";
+import { persistor } from "./Redux/store";
 import MontyTheme from "./theme/MontyTheme";
 import getThemesConfig from "./theme/themesConfig";
 
@@ -44,13 +45,21 @@ function App() {
   const appVersion = __APP_VERSION__;
   // Built inside the component so brand.css is loaded before its variables are read
   const theme = useMemo(() => getThemesConfig().default, []);
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.authentication);
+
+  // On every app load, re-read role and permissions for a signed-in admin
+  // (login already returns them, so this only matters after a reload)
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchUserInfo());
+    }
+  }, [dispatch]);
 
   useEffect(() => {
     const localPackageVersion = localStorage.getItem("PACKAGE_VERSION");
 
     if (localPackageVersion) {
-      const persistor = persistStore(store);
-
       if (localPackageVersion === appVersion) {
         console.log("Versions match. No action required");
       } else {

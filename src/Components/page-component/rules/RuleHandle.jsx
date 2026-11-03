@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { Close } from "@mui/icons-material";
 import {
   Alert,
@@ -7,21 +7,24 @@ import {
   DialogContent,
   IconButton,
 } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { toast } from "react-toastify";
+import * as yup from "yup";
+import {
+  AddRule,
+  editRule,
+  getApiErrorCode,
+} from "../../../core/apis/rulesAPI";
+import { beneficiaryData } from "../../../core/vairables/EnumData";
+import {
+  useRuleActions,
+  useRuleEvents,
+} from "../../../pages/rules/useRuleOptions";
 import {
   FormDropdownList,
   FormInput,
 } from "../../form-component/FormComponent";
-import * as yup from "yup";
-import { useForm, Controller, useWatch } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { beneficiaryData } from "../../../core/vairables/EnumData";
-import {
-  AddRule,
-  editRule,
-  getAllActions,
-  getAllEvents,
-} from "../../../core/apis/rulesAPI";
-import { toast } from "react-toastify";
 
 const validationSchema = yup.object({
   promotion_rule_action_id: yup.object().required().nullable().label("Action"),
@@ -42,10 +45,18 @@ const validationSchema = yup.object({
   taken from that table*/
 });
 
+const DUPLICATE_MESSAGE =
+  "A rule with the same action, event, and usage limit already exists.";
+
+/*
+  MS-5088: add / edit modal on POST / PUT /promotion-rules. Uniqueness is checked by the
+  API (409 duplicate_rule shown in the modal), no browser read-then-write.
+*/
 const RuleHandle = ({ onClose, data = null, refetch }) => {
-  const [actions, setActions] = useState([]);
-  const [events, setEvents] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+  const { data: actions = [] } = useRuleActions();
+  const { data: events = [] } = useRuleEvents();
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       promotion_rule_action_id: null,
@@ -65,56 +76,42 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
     ?.toLowerCase()
     ?.includes("cashback");
 
-  const getActionsData = () => {
-    getAllActions().then((res) => {
-      if (res?.status == 200) {
-        setActions(res?.data);
-      }
-    });
-  };
-
-  const getEventsData = () => {
-    getAllEvents().then((res) => {
-      if (res?.status == 200) {
-        setEvents(res?.data);
-      }
-    });
-  };
-
   useEffect(() => {
     if (data) {
       reset({
-        promotion_rule_action_id: data?.promotion_rule_action,
-        promotion_rule_event_id: data?.promotion_rule_event,
+        promotion_rule_action_id: data?.action || null,
+        promotion_rule_event_id: data?.event || null,
         max_usage: data?.max_usage,
-        beneficiary: beneficiaryData?.find((el) => el?.id == data?.beneficiary),
+        beneficiary:
+          beneficiaryData?.find((el) => el?.id == data?.beneficiary) || null,
       });
     }
-    getActionsData();
-    getEventsData();
   }, []);
 
   const handleSubmitForm = (payload) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
-    let handleAPI = data ? editRule : AddRule;
+    setFormError("");
+    const handleAPI = data ? editRule : AddRule;
     handleAPI({
-      ...payload,
+      // TEOS-211: the API refuses a number sent as a string
+      max_usage: Number(payload?.max_usage),
       beneficiary: payload?.beneficiary?.id,
       promotion_rule_action_id: payload?.promotion_rule_action_id?.id,
       promotion_rule_event_id: payload?.promotion_rule_event_id?.id,
       ...(data && { id: data?.id }),
     })
-      .then((res) => {
-        if (res?.status >= 200 && res?.status < 300) {
-          toast.success(`Rule ${data ? "edited" : "added"} successfully`);
-          refetch();
-          onClose();
-        } else {
-          toast.error(res?.error);
-        }
+      .then(() => {
+        toast.success(`Rule ${data ? "edited" : "added"} successfully`);
+        refetch?.();
+        onClose?.();
       })
       .catch((error) => {
-        toast.error(error?.message || "Failed to save rule");
+        if (getApiErrorCode(error) === "duplicate_rule") {
+          setFormError(DUPLICATE_MESSAGE);
+        } else {
+          toast.error(error?.message || "Failed to save rule");
+        }
       })
       .finally(() => {
         setIsSubmitting(false);
@@ -167,7 +164,7 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
                     helperText={error?.message}
                     accessName={"name"}
                     onChange={(value) => onChange(value)}
-                    disabled={data}
+                    disabled={!!data}
                   />
                 )}
                 id={"promotion_rule_action_id"}
@@ -190,7 +187,7 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
                     helperText={error?.message}
                     accessName={"name"}
                     onChange={(value) => onChange(value)}
-                    disabled={data}
+                    disabled={!!data}
                   />
                 )}
                 id={"promotion_rule_event_id"}
@@ -211,7 +208,7 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
                     value={value}
                     helperText={error?.message}
                     onChange={(value) => onChange(value ?? null)}
-                    disabled={data}
+                    disabled={!!data}
                   />
                 )}
                 id={"max_usage"}
@@ -241,6 +238,12 @@ const RuleHandle = ({ onClose, data = null, refetch }) => {
               />
             </div>
           </div>
+
+          {formError && (
+            <Alert severity="error" role="alert">
+              {formError}
+            </Alert>
+          )}
 
           {isCashbackAction && (
             <Alert severity="info">

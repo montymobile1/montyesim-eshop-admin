@@ -7,110 +7,167 @@ import {
   Chip,
   FormControl,
   IconButton,
+  Tab,
   TableCell,
-  TablePagination,
+  Tabs,
   TextField,
   Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Filters from "../../Components/Filters/Filters";
-import { FormDropdownList } from "../../Components/form-component/FormComponent";
 import BanUser from "../../Components/page-component/users/BanUser";
 import RowComponent from "../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../Components/shared/table-component/TableComponent";
+import TablePaginationComponent from "../../Components/shared/table-component/TablePaginationComponent";
 import { BAN_STATUS, getAllUsers } from "../../core/apis/usersAPI";
-import useIsSuperAdmin from "../../core/hooks/useIsSuperAdmin";
+import useUrlQueries, {
+  useLastValidPage,
+} from "../../core/custom-hook/useUrlQueries";
+import usePermission from "../../core/hooks/usePermission";
+import { PERMISSIONS } from "../../core/vairables/Permissions";
 
-const banStatusOptions = [
-  { id: BAN_STATUS.banned, name: "Banned" },
-  { id: BAN_STATUS.active, name: "Active" },
+// The ban status filter, fed by the API facets (MS-5080).
+const BAN_STATUS_TABS = [
+  { value: BAN_STATUS.all, label: "All" },
+  { value: BAN_STATUS.banned, label: "Banned" },
+  { value: BAN_STATUS.active, label: "Active" },
 ];
+
+// Only the columns the API can sort on (TEOS-111); the others are not clickable.
+const SORT_COLUMNS = ["created_at", "email"];
+const DEFAULT_SORT = { sortBy: "created_at", sortDirection: "desc" };
+
+const DEFAULT_QUERIES = {
+  search: "",
+  banStatus: BAN_STATUS.all,
+  pageSize: 10,
+  page: 0,
+  ...DEFAULT_SORT,
+};
+
+const toNumber = (value, fallback) => {
+  const number = Number.parseInt(value, 10);
+  return Number.isNaN(number) || number < 0 ? fallback : number;
+};
+
+const isBanStatus = (value) =>
+  BAN_STATUS_TABS.some((tab) => tab.value === value);
+
+const readQueries = (searchParams) => {
+  const banStatus = searchParams.get("banStatus");
+  const sortBy = searchParams.get("sortBy");
+  const sortDirection = searchParams.get("sortDirection");
+  return {
+    search: searchParams.get("search") || "",
+    banStatus: isBanStatus(banStatus) ? banStatus : BAN_STATUS.all,
+    pageSize: toNumber(searchParams.get("pageSize"), 10) || 10,
+    page: toNumber(searchParams.get("page"), 0),
+    sortBy: SORT_COLUMNS.includes(sortBy) ? sortBy : DEFAULT_SORT.sortBy,
+    sortDirection: ["asc", "desc"].includes(sortDirection)
+      ? sortDirection
+      : DEFAULT_SORT.sortDirection,
+  };
+};
 
 function UsersPage() {
   const navigate = useNavigate();
-  const isSuperAdmin = useIsSuperAdmin();
-  const [loading, setLoading] = useState(null);
+  const queryClient = useQueryClient();
+  const canBanUsers = usePermission(PERMISSIONS.USERS_BAN);
+  // TEOS-287: the table follows the URL on Back / Forward, the search box too
+  const [searchQueries, setSearchQueries] = useUrlQueries(readQueries, {
+    onUrlChange: (next) => setSearch(next.search),
+  });
+  const [search, setSearch] = useState(searchQueries.search);
   const [openBan, setOpenBan] = useState({ open: false, data: null });
-  const [searchQueries, setSearchQueries] = useState({
-    name: "",
-    banStatus: null,
-    pageSize: 10,
-    page: 0,
+
+  const { data, isFetching, isError, error } = useQuery({
+    queryKey: ["users", searchQueries],
+    queryFn: () =>
+      getAllUsers({
+        page: searchQueries.page + 1,
+        page_size: searchQueries.pageSize,
+        ban_status: searchQueries.banStatus,
+        search: searchQueries.search?.trim() || undefined,
+        sort: searchQueries.sortBy,
+        dir: searchQueries.sortDirection,
+      }).then((res) => res?.data?.data),
+    placeholderData: keepPreviousData,
   });
 
-  const [search, setSearch] = useState("");
-  const [selectedBanStatus, setSelectedBanStatus] = useState(null);
-  const [totalRows, setTotalRows] = useState(0);
-  const [data, setData] = useState([]);
-
-  const getUsers = () => {
-    setLoading(true);
-
-    const { name, banStatus, page, pageSize } = searchQueries;
-    getAllUsers({
-      page,
-      pageSize,
-      name,
-      banStatus,
-    })
-      .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-          setLoading(false);
-          setData([]);
-          setTotalRows(0);
-        } else {
-          setTotalRows(res?.count || 0);
-          setData(
-            res?.data?.map((el) => ({
-              ...el,
-              ...el?.metadata,
-            })),
-          );
-        }
-      })
-      .catch((e) => {
-        toast.error(e?.message || "Fail to display data");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
-
   useEffect(() => {
-    getUsers();
-  }, [searchQueries]);
+    if (isError && !error?.isForbidden) toast.error("Fail to display data");
+  }, [isError]);
+
+  const rows = isError ? [] : data?.data || [];
+  const totalRows = data?.total_count || 0;
+  const facets = data?.facets;
+
+  // TEOS-286: a page past the end (stale URL, rows removed) moves to the last valid page,
+  // replacing the out-of-range URL (TEOS-287).
+  useLastValidPage({
+    page: searchQueries.page,
+    pageSize: searchQueries.pageSize,
+    totalRows,
+    rowCount: rows.length,
+    isFetching,
+    isError,
+    onChange: (page) =>
+      setSearchQueries({ ...searchQueries, page }, { replace: true }),
+  });
+
+  const refreshUsers = () =>
+    queryClient.invalidateQueries({ queryKey: ["users"] });
 
   const resetFilters = () => {
-    setSearchQueries({ name: "", banStatus: null, pageSize: 10, page: 0 });
+    setSearchQueries({
+      ...DEFAULT_QUERIES,
+      banStatus: searchQueries.banStatus,
+      sortBy: searchQueries.sortBy,
+      sortDirection: searchQueries.sortDirection,
+    });
     setSearch("");
-    setSelectedBanStatus(null);
+  };
+
+  // A new column starts ascending; clicking the same column again flips the direction.
+  const requestSort = (key) => {
+    if (!SORT_COLUMNS.includes(key)) return;
+    const direction =
+      searchQueries.sortBy === key && searchQueries.sortDirection === "asc"
+        ? "desc"
+        : "asc";
+    setSearchQueries({
+      ...searchQueries,
+      sortBy: key,
+      sortDirection: direction,
+      page: 0,
+    });
   };
 
   const applyFilter = () => {
     // Back to the first page: the filtered list is shorter, so the page being
     // read may not exist any more.
-    setSearchQueries({
-      ...searchQueries,
-      name: search,
-      banStatus: selectedBanStatus?.id || null,
-      page: 0,
-    });
+    setSearchQueries({ ...searchQueries, search, page: 0 });
   };
 
   // Banning is a super admin only action, so is the column that goes with it.
   const tableHeaders = [
     { name: "Name" },
-    { name: "Email" },
+    { name: "Email", sorted: "email" },
     { name: "MSISDN" },
     { name: "Email Verified" },
     { name: "Phone Verified" },
     { name: "Should Notify" },
     { name: "Ban Status" },
+    { name: "Created At", sorted: "created_at" },
   ];
 
   const tableCellStyles = {
@@ -123,8 +180,7 @@ function UsersPage() {
       <Filters
         onReset={resetFilters}
         onApply={applyFilter}
-        // Either filter on its own is enough to apply.
-        applyDisable={!search?.trim() && !selectedBanStatus}
+        applyDisable={!search?.trim()}
       >
         <Grid container size={{ xs: 12 }} spacing={2}>
           <Grid item size={{ xs: 12, sm: 3 }}>
@@ -155,43 +211,50 @@ function UsersPage() {
               />
             </FormControl>
           </Grid>
-          <Grid item size={{ xs: 12, sm: 3 }}>
-            <FormControl fullWidth>
-              <label className="mb-2" htmlFor="ban-status-input">
-                Ban Status
-              </label>
-              <FormDropdownList
-                id="ban-status-input"
-                placeholder={"Select Ban Status"}
-                value={selectedBanStatus}
-                data={banStatusOptions}
-                accessName={"name"}
-                onChange={(value) => setSelectedBanStatus(value)}
-              />
-            </FormControl>
-          </Grid>
         </Grid>
       </Filters>
 
+      <Tabs
+        value={searchQueries.banStatus}
+        onChange={(_, banStatus) =>
+          setSearchQueries({ ...searchQueries, banStatus, page: 0 })
+        }
+        aria-label="Ban status"
+      >
+        {BAN_STATUS_TABS.map((tab) => (
+          <Tab
+            key={tab.value}
+            value={tab.value}
+            label={
+              facets ? `${tab.label} (${facets?.[tab.value] ?? 0})` : tab.label
+            }
+          />
+        ))}
+      </Tabs>
+
       <TableComponent
-        loading={loading}
+        loading={isFetching && !data}
         dataPerPage={searchQueries?.pageSize}
-        tableData={data}
+        tableData={rows}
         noDataFound={"No Users Found"}
         tableHeaders={tableHeaders}
         actions={true}
+        requestSort={requestSort}
+        sortedBy={searchQueries.sortBy}
+        sortDirection={searchQueries.sortDirection}
       >
-        {data?.map((el) => (
+        {rows.map((el) => (
           <RowComponent
             key={el?.id}
             actions={true}
             onView={() => navigate(`/users/${el?.id}`)}
             /*
-              Banning sits next to the eye icon, and only for super admins.
+              Banning sits next to the eye icon, and only for admins having
+              the ban permission.
               A closed padlock bans, an open one lifts the ban.
             */
             extraActions={
-              isSuperAdmin ? (
+              canBanUsers ? (
                 <Tooltip
                   title={el?.is_banned ? "Unban User" : "Ban User"}
                   placement={"top"}
@@ -256,22 +319,26 @@ function UsersPage() {
                 )}
               </div>
             </TableCell>
+            <TableCell sx={{ whiteSpace: "nowrap" }}>
+              {el?.created_at
+                ? dayjs(el?.created_at).format("DD-MM-YYYY HH:mm")
+                : "N/A"}
+            </TableCell>
           </RowComponent>
         ))}
       </TableComponent>
-      <TablePagination
-        component="div"
-        count={totalRows || 0}
+      <TablePaginationComponent
+        totalRows={totalRows}
         page={searchQueries?.page}
+        pageSize={searchQueries?.pageSize}
         onPageChange={(e, newPage) => {
           setSearchQueries({ ...searchQueries, page: newPage });
         }}
-        rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
           setSearchQueries({
             ...searchQueries,
             page: 0,
-            pageSize: e.target.value,
+            pageSize: Number(e.target.value),
           });
         }}
       />
@@ -280,7 +347,7 @@ function UsersPage() {
         <BanUser
           user={openBan?.data || null}
           onClose={() => setOpenBan({ open: false, data: null })}
-          onSuccess={getUsers}
+          onSuccess={refreshUsers}
         />
       )}
     </Card>

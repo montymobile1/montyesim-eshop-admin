@@ -1,84 +1,134 @@
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import SearchIcon from "@mui/icons-material/Search";
 import {
   Card,
+  Chip,
+  IconButton,
+  Tooltip,
   FormControl,
   Grid2,
   Switch,
+  Tab,
   TableCell,
   TablePagination,
+  Tabs,
   TextField,
 } from "@mui/material";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
+import CountUp from "react-countup";
 import { toast } from "react-toastify";
 import Filters from "../../Components/Filters/Filters";
 import RowComponent from "../../Components/shared/table-component/RowComponent";
-import TableComponent from "../../Components/shared/table-component/TableComponent";
+import TableComponent, {
+  TableToolbar,
+} from "../../Components/shared/table-component/TableComponent";
 import {
   DeleteVoucher,
   getAllVouchers,
+  getApiErrorCode,
   toggleVoucherStatus,
 } from "../../core/apis/vouchersAPI";
+import useUrlQueries, {
+  useLastValidPage,
+} from "../../core/custom-hook/useUrlQueries";
+import { copyToClipboard } from "../../core/helpers/clipboard";
+import usePermission from "../../core/hooks/usePermission";
+import { DefaultCurrency } from "../../core/vairables/EnumData";
+import { PERMISSIONS } from "../../core/vairables/Permissions";
 import VoucherDeleteModal from "./components/modals/VoucherDeleteModal";
 import VoucherFormModal from "./components/modals/VoucherFormModal";
-import { DefaultCurrency } from "../../core/vairables/EnumData";
-import CountUp from "react-countup";
+
+const STATUS_TABS = [
+  { value: "all", label: "All" },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  { value: "used", label: "Used" },
+  { value: "expired", label: "Expired" },
+];
+
+// Unused and past its expiry (the API sends is_expired; computed for older rows).
+// TEOS-214: a voucher is valid until the end of its expiry day, so it is
+// expired only when that day is before today.
+export const isExpired = (voucher, now = dayjs()) =>
+  voucher?.is_expired ??
+  (!voucher?.is_used &&
+    !!voucher?.expired_at &&
+    dayjs(voucher.expired_at).isBefore(now, "day"));
+
+const DEFAULT_QUERIES = { search: "", status: "all", pageSize: 10, page: 0 };
+
+const toNumber = (value, fallback) => {
+  const number = Number.parseInt(value, 10);
+  return Number.isNaN(number) || number < 0 ? fallback : number;
+};
+
+const readQueries = (searchParams) => {
+  const status = searchParams.get("status");
+  return {
+    search: searchParams.get("search") || "",
+    status: STATUS_TABS.some((tab) => tab.value === status) ? status : "all",
+    pageSize: toNumber(searchParams.get("pageSize"), 10) || 10,
+    page: toNumber(searchParams.get("page"), 0),
+  };
+};
 
 export default function VoucherPage() {
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const canWrite = usePermission(PERMISSIONS.VOUCHERS_WRITE);
+  // TEOS-287: the table follows the URL on Back / Forward, the search box too
+  const [searchQueries, setSearchQueries] = useUrlQueries(readQueries, {
+    onUrlChange: (next) => setSearch(next.search),
+  });
+  const [search, setSearch] = useState(searchQueries.search);
   const [openDelete, setOpenDelete] = useState({ open: false, data: null });
-  const [data, setData] = useState([]);
-  const [search, setSearch] = useState("");
-  const [totalRows, setTotalRows] = useState(0);
-  const [searchQueries, setSearchQueries] = useState({
-    search: "",
-    pageSize: 10,
-    page: 0,
-  });
-  const [modalCtx, setModalCtx] = useState({
-    open: false,
-    data: null,
-  });
+  const [deleting, setDeleting] = useState(false);
+  const [modalCtx, setModalCtx] = useState({ open: false, data: null });
 
-  const getVouchers = async () => {
-    setLoading(true);
-    try {
-      const { page, pageSize, search } = searchQueries;
-      const res = await getAllVouchers({ page, pageSize, search });
-
-      if (res?.error) {
-        toast.error(res?.error);
-        setData([]);
-        setTotalRows(0);
-      } else {
-        setTotalRows(res.count);
-        setData(
-          res.data.map((el) => ({
-            ...el,
-            ...el?.metadata,
-          }))
-        );
-      }
-    } catch (e) {
-      toast.error(e?.message || "Fail to display data");
-      setData([]);
-      setTotalRows(0);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isFetching, isError, error } = useQuery({
+    queryKey: ["vouchers", searchQueries],
+    queryFn: () =>
+      getAllVouchers({
+        page: searchQueries.page + 1,
+        page_size: searchQueries.pageSize,
+        status: searchQueries.status,
+        search: searchQueries.search?.trim() || undefined,
+      }).then((res) => res?.data?.data),
+    placeholderData: keepPreviousData,
+  });
 
   useEffect(() => {
-    getVouchers();
-  }, [searchQueries]);
+    if (isError && !error?.isForbidden) toast.error("Fail to display data");
+  }, [isError]);
+
+  const rows = isError ? [] : data?.data || [];
+  const totalRows = data?.total_count || 0;
+  const facets = data?.facets;
+
+  // TEOS-286: a page past the end (stale URL, rows removed) moves to the last valid page,
+  // replacing the out-of-range URL (TEOS-287).
+  useLastValidPage({
+    page: searchQueries.page,
+    pageSize: searchQueries.pageSize,
+    totalRows,
+    rowCount: rows.length,
+    isFetching,
+    isError,
+    onChange: (page) =>
+      setSearchQueries({ ...searchQueries, page }, { replace: true }),
+  });
+
+  const refreshVouchers = () =>
+    queryClient.invalidateQueries({ queryKey: ["vouchers"] });
 
   const resetFilters = () => {
-    setSearchQueries({ ...searchQueries, search: "" });
+    setSearchQueries({ ...DEFAULT_QUERIES, status: searchQueries.status });
     setSearch("");
   };
 
   const applyFilter = () => {
-    setSearchQueries({ ...searchQueries, search: search });
+    setSearchQueries({ ...searchQueries, search, page: 0 });
   };
 
   const tableHeaders = [
@@ -87,7 +137,7 @@ export default function VoucherPage() {
     { name: "Used By" },
     { name: "Expired At" },
     { name: "Created At" },
-    { name: "Is Active" },
+    { name: "Status" },
   ];
 
   const tableCellStylesSmall = {
@@ -101,32 +151,48 @@ export default function VoucherPage() {
   };
 
   const handleVoucherStatus = (voucher) => {
-    toggleVoucherStatus({
-      id: voucher?.id,
-      currentValue: voucher?.is_active,
-    }).then((res) => {
-      if (res?.error) {
-        toast.error(res?.error || "Failed to change voucher status");
-      } else {
-        getVouchers();
+    toggleVoucherStatus({ id: voucher?.id, is_active: !voucher?.is_active })
+      .then(() => {
         toast.success("Voucher status updated successfully");
-      }
-    });
+      })
+      .catch((error) => {
+        if (getApiErrorCode(error) === "already_used") {
+          toast.info("This voucher has already been used: it can't be activated.");
+        } else {
+          toast.error(error?.message || "Failed to change voucher status");
+        }
+      })
+      .finally(refreshVouchers);
   };
 
   const handleDeleteVoucher = () => {
     const voucher = openDelete?.data;
+    setDeleting(true);
 
-    DeleteVoucher(voucher?.id).then((res) => {
-      if (res?.error) {
-        toast.error(res?.error || "Failed to delete voucher");
-      } else {
-        getVouchers();
+    DeleteVoucher(voucher?.id)
+      .then(() => {
         toast.success("Voucher deleted successfully");
-      }
-
-      setOpenDelete({ data: null, open: false });
-    });
+        // deleting the last row of a page moves back one page
+        if (rows.length === 1 && searchQueries.page > 0) {
+          setSearchQueries({ ...searchQueries, page: searchQueries.page - 1 });
+        }
+      })
+      .catch((error) => {
+        const code = getApiErrorCode(error);
+        if (code === "voucher_used") {
+          // used meanwhile: the refresh below shows it as used
+          toast.info("Cannot delete voucher — it has already been used.");
+        } else if (error?.response?.status === 404) {
+          toast.info("This voucher was already deleted.");
+        } else {
+          toast.error(error?.message || "Failed to delete voucher");
+        }
+      })
+      .finally(() => {
+        setDeleting(false);
+        setOpenDelete({ data: null, open: false });
+        refreshVouchers();
+      });
   };
 
   const handleOpenDeleteModal = (el) => {
@@ -176,40 +242,89 @@ export default function VoucherPage() {
         </Grid2>
       </Filters>
 
+      {/* actions sit above the status tabs */}
+      <TableToolbar
+        onAdd={canWrite ? () => setModalCtx({ open: true, data: null }) : undefined}
+      />
+
+      <Tabs
+        value={searchQueries.status}
+        onChange={(_, status) =>
+          setSearchQueries({ ...searchQueries, status, page: 0 })
+        }
+        aria-label="Voucher status"
+      >
+        {STATUS_TABS.map((tab) => (
+          <Tab
+            key={tab.value}
+            value={tab.value}
+            label={
+              facets ? `${tab.label} (${facets?.[tab.value] ?? 0})` : tab.label
+            }
+          />
+        ))}
+      </Tabs>
+
       <TableComponent
-        loading={loading}
+        loading={isFetching && !data}
         dataPerPage={searchQueries?.pageSize}
-        tableData={data}
+        tableData={rows}
+        noDataFound={"No vouchers"}
         tableHeaders={tableHeaders}
         actions={true}
-        onAdd={() => setModalCtx({ open: true, data: null })}
       >
-        {data?.map((el) => (
+        {rows.map((el) => (
           <RowComponent
             key={el?.id}
             actions={true}
-            onDelete={() => handleOpenDeleteModal(el)}
+            onDelete={
+              canWrite && !el?.is_used
+                ? () => handleOpenDeleteModal(el)
+                : undefined
+            }
+            extraActions={
+              <Tooltip title={"Copy code"} placement={"top"}>
+                <IconButton
+                  color="primary"
+                  aria-label={`copy code ${el?.code}`}
+                  onClick={() =>
+                    copyToClipboard(el?.code || "", "Code copied")
+                  }
+                >
+                  <ContentCopyIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            }
           >
             <TableCell {...tableCellStylesSmall}>
               {el?.code || "N/A"}
             </TableCell>
             <TableCell {...tableCellStylesSmall}>
-              {DefaultCurrency}{" "}
+              {el?.currency || DefaultCurrency}{" "}
               <CountUp
                 start={0}
-                end={el?.amount}
+                end={Number(el?.amount) || 0}
                 duration={1.5}
                 separator=","
                 decimals={2}
               />
             </TableCell>
             <TableCell {...tableCellStylesSmall}>
-              {el?.user?.email || "N/A"}
+              {el?.used_by?.email || el?.used_by_user?.email || "N/A"}
             </TableCell>
             <TableCell {...tableCellStyles}>
               {el?.expired_at
                 ? dayjs(el?.expired_at).format("DD-MM-YYYY")
                 : "N/A"}
+              {isExpired(el) && (
+                <Chip
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  label="Expired"
+                  className="ml-2"
+                />
+              )}
             </TableCell>
             <TableCell {...tableCellStyles}>
               {el?.created_at
@@ -218,12 +333,19 @@ export default function VoucherPage() {
             </TableCell>
 
             <TableCell sx={{ minWidth: "100px" }}>
-              <Switch
-                color="success"
-                checked={el?.is_active}
-                onChange={() => handleVoucherStatus(el)}
-                name="is_active"
-              />
+              {el?.is_used ? (
+                // a used voucher cannot be re-activated (409 already_used)
+                <Chip size="small" label="Used" />
+              ) : (
+                <Switch
+                  color="success"
+                  checked={!!el?.is_active}
+                  disabled={!canWrite}
+                  onChange={() => handleVoucherStatus(el)}
+                  name="is_active"
+                  inputProps={{ "aria-label": `Toggle ${el?.code}` }}
+                />
+              )}
             </TableCell>
           </RowComponent>
         ))}
@@ -231,11 +353,9 @@ export default function VoucherPage() {
 
       <TablePagination
         component="div"
-        count={totalRows || 0}
+        count={totalRows}
         page={searchQueries?.page}
-        onPageChange={(value, page) =>
-          setSearchQueries({ ...searchQueries, page: page })
-        }
+        onPageChange={(_, page) => setSearchQueries({ ...searchQueries, page })}
         rowsPerPage={searchQueries?.pageSize}
         onRowsPerPageChange={(e) => {
           setSearchQueries({
@@ -251,6 +371,7 @@ export default function VoucherPage() {
           setOpenDelete={setOpenDelete}
           openDelete={openDelete}
           handleDeleteVoucher={handleDeleteVoucher}
+          deleting={deleting}
         />
       )}
       {modalCtx?.open && (
@@ -258,13 +379,8 @@ export default function VoucherPage() {
           voucher={modalCtx?.data}
           open={modalCtx?.open}
           onClose={() => setModalCtx({ open: false, data: null })}
-          onSuccess={() => {
-            setModalCtx({
-              open: false,
-              data: null,
-            });
-            getVouchers();
-          }}
+          // the form then shows the new code with Copy; Done closes it
+          onSuccess={refreshVouchers}
         />
       )}
     </Card>

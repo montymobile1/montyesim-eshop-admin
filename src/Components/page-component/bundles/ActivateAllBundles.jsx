@@ -1,26 +1,32 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import * as yup from "yup";
 //COMPONENT
 import { Close } from "@mui/icons-material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Button, Dialog, DialogContent, IconButton } from "@mui/material";
-import { activateAllBundles } from "../../../core/apis/bundlesAPI";
+import {
+  bulkBundleStatus,
+  getApiErrorCode,
+} from "../../../core/apis/bundlesAPI";
+import { reasonSchema } from "../../../core/helpers/reasonSchema";
 import { FormInput } from "../../form-component/FormComponent";
 
 // Reason is optional for a bulk activation, unlike the deactivation.
 const schema = yup.object().shape({
-  reason: yup.string().label("Reason").max(500).nullable(),
+  reason: reasonSchema({ required: false }),
 });
 
+/*
+  One POST /bundles/status/bulk { is_active: true, reason? }. The API audits
+  the action (operation BULK) and rotates APP_CACHE_KEY in the same transaction.
+*/
 const ActivateAllBundles = ({ inactiveCount = 0, onClose, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const userId = useSelector((state) => state.authentication?.user_info?.id);
 
-  const { control, handleSubmit } = useForm({
+  const { control, handleSubmit, setError } = useForm({
     defaultValues: {
       reason: "",
     },
@@ -29,28 +35,31 @@ const ActivateAllBundles = ({ inactiveCount = 0, onClose, onSuccess }) => {
   });
 
   const handleSubmitForm = (payload) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
-    activateAllBundles({ reason: payload?.reason?.trim() || null, userId })
+    bulkBundleStatus({ is_active: true, reason: payload?.reason })
       .then((res) => {
-        if (res?.error) {
-          toast.error(res?.error);
-          return;
-        }
-
-        if (res?.data?.success) {
-          toast.success(res?.data?.message);
-          if (res?.auditError) {
-            toast.warn(
-              `Bundles activated but the audit log failed: ${res.auditError}`
-            );
-          }
-          onSuccess();
-        } else {
-          toast.info(res?.data?.message || "No bundle was activated.");
-        }
-
+        const affected = res?.data?.data?.rows_affected ?? 0;
+        toast.success(
+          `All bundles have been successfully activated. ${affected} bundle(s) affected.`,
+        );
+        onSuccess();
         onClose();
+      })
+      .catch((error) => {
+        if (getApiErrorCode(error) === "no_change") {
+          toast.info("All bundles are already active.");
+          onSuccess();
+          onClose();
+        } else if (error?.response?.status === 422) {
+          setError("reason", {
+            type: "server",
+            message: error?.message,
+          });
+        } else {
+          toast.error(error?.message || "Failed to activate bundles");
+        }
       })
       .finally(() => {
         setIsSubmitting(false);

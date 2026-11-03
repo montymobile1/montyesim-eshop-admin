@@ -6,17 +6,15 @@ import {
   TableRow,
   TableCell,
   TableHead,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import ContentPasteSearchIcon from "@mui/icons-material/ContentPasteSearch";
 
+// Page-level actions (onAdd / onEdit / onLogs) are rendered above the table
+// by TableComponent's toolbar; the actions cell here only keeps row action
+// columns aligned.
 export function TableCustomHeader(props) {
   const { headers, actions } = props;
 
-  const { sortDirection, sortedBy, requestSort, onAdd, onEdit, onLogs } = props;
+  const { sortDirection, sortedBy, requestSort } = props;
 
   const handleRequestSort = (item) => {
     requestSort(item);
@@ -43,49 +41,7 @@ export function TableCustomHeader(props) {
             )}
           </TableCell>
         ))}
-        {actions && (
-          <TableCell align="right">
-            {onAdd && (
-              <Tooltip title={"Add new"} placement={"top"}>
-                <IconButton
-                  color="primary"
-                  aria-label="add"
-                  onClick={(event) => {
-                    onAdd();
-                  }}
-                >
-                  <AddIcon />
-                </IconButton>
-              </Tooltip>
-            )}
-            {onLogs && (
-              <Tooltip title={"Logs"} placement={"top"}>
-                <IconButton
-                  color="primary"
-                  aria-label="add"
-                  onClick={(event) => {
-                    onLogs();
-                  }}
-                >
-                  <ContentPasteSearchIcon />
-                </IconButton>
-              </Tooltip>
-            )}
-            {onEdit && (
-              <Tooltip title={"Edit"} placement={"top"}>
-                <IconButton
-                  color="primary"
-                  aria-label="add"
-                  onClick={(event) => {
-                    onEdit();
-                  }}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-          </TableCell>
-        )}
+        {actions && <TableCell align="right" />}
       </TableRow>
     </TableHead>
   );

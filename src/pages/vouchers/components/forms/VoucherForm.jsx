@@ -1,24 +1,46 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as yup from "yup";
 import {
   FormDate,
   FormInput,
 } from "../../../../Components/form-component/FormComponent";
-import { Button, CircularProgress, Tooltip } from "@mui/material";
+import {
+  Button,
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  Typography,
+} from "@mui/material";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { DefaultCurrency } from "../../../../core/vairables/EnumData";
-import { useDebouncedCallback } from "use-debounce";
 import {
   addVoucher,
-  checkVoucherCodeUnique,
+  getApiErrorCode,
 } from "../../../../core/apis/vouchersAPI";
-import { Check } from "@mui/icons-material";
-import CloseIcon from "@mui/icons-material/Close";
+import { copyToClipboard } from "../../../../core/helpers/clipboard";
 import { toast } from "react-toastify";
+import dayjs from "dayjs";
+
+// Same rule as the API (TEOS-133): letters, digits and -, 4 to 32 characters;
+// stored upper case.
+export const VOUCHER_CODE_PATTERN = /^[A-Za-z0-9-]{4,32}$/;
+export const VOUCHER_CODE_MESSAGE = "Code must be 4 to 32 letters, digits or -";
 
 const schema = yup.object().shape({
-  code: yup.string().trim().required("Code name is required"),
+  generate: yup.boolean(),
+  code: yup
+    .string()
+    .trim()
+    .when("generate", {
+      is: true,
+      then: (rule) => rule.notRequired(),
+      otherwise: (rule) =>
+        rule
+          .required("Code name is required")
+          .matches(VOUCHER_CODE_PATTERN, VOUCHER_CODE_MESSAGE),
+    }),
   amount: yup
     .number()
     .typeError("Amount must be a number")
@@ -34,101 +56,111 @@ const schema = yup.object().shape({
       "Expiry date must be today or later",
       (value) => {
         if (!value) return false;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const inputDate = new Date(value);
-        return inputDate >= today;
+        // compared by local day: today is allowed (valid until the end of the day, TEOS-214)
+        const inputDate = dayjs(value);
+        return inputDate.isValid() && !inputDate.isBefore(dayjs(), "day");
       }
     ),
 });
 
+// "amount: must be at most 1e+06 (VOUCHER_MAX_AMOUNT)" (422 from the API)
+const amountErrorOf = (error) => {
+  const message = error?.response?.data?.developerMessage;
+  if (typeof message !== "string" || !/amount/i.test(message)) return null;
+  const max = message.match(/at most ([\d.e+]+)/i);
+  return max
+    ? `Amount must be at most ${Number(max[1]).toLocaleString()}`
+    : "Amount is not valid";
+};
+
 export default function VoucherForm({ voucher = null, onSuccess, OnCancel }) {
-  const [codeUnique, setCodeUnique] = useState({
-    loading: false,
-    check: false,
-    message: "",
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [created, setCreated] = useState(null);
 
   const {
     handleSubmit,
     control,
+    setError,
+    watch,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
+      generate: false,
       code: voucher?.code || "",
       amount: voucher?.amount || "",
       expired_at: voucher?.expired_at || "",
     },
   });
 
-  const checkCodeUniqueness = (value) => {
-    setCodeUnique((prev) => ({
-      ...prev,
-      loading: true,
-    }));
+  const generate = watch("generate");
 
-    if (errors?.code) {
-      setCodeUnique({
-        check: false,
-        message: errors?.code?.message,
-        loading: false,
-      });
-    } else {
-      checkVoucherCodeUnique(value).then((res) => {
-        setCodeUnique({
-          check: res?.status == 200 && res?.data?.length === 0,
-          message: res?.data?.length == 0 ? res?.error : "Code is not unique",
-          loading: false,
-        });
-      });
-    }
-  };
-
-  const debouncedCode = useDebouncedCallback((value) => {
-    checkCodeUniqueness(value);
-  }, 500);
-
+  // Uniqueness is checked by the API: 409 duplicate_code lands on the code field.
   const onSubmit = (data) => {
-    if (codeUnique?.check) {
-      setIsSubmitting(true);
-      const { code, amount, expired_at } = data;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    const { amount, expired_at } = data;
+    const code = data.generate ? undefined : data.code?.trim().toUpperCase();
 
-      addVoucher({
-        code,
-        amount,
-        expired_at,
+    // TEOS-215: the API refuses an amount sent as a string
+    addVoucher({ code, amount: Number(amount), expired_at })
+      .then((res) => {
+        toast.success("Voucher created successfully");
+        const saved = res?.data?.data;
+        setCreated(saved?.code ? saved : { code: code || "" });
+        onSuccess?.(saved || data);
       })
-        .then((res) => {
-          if (res?.error) {
-            toast.error(res?.error || "Failed to insert voucher");
-          } else {
-            toast.success("Voucher created successfully");
-            onSuccess?.(data);
-          }
-        })
-        .catch((err) => {
+      .catch((error) => {
+        const amountError = amountErrorOf(error);
+        if (getApiErrorCode(error) === "duplicate_code") {
+          setError("code", { type: "server", message: "Code is not unique" });
+        } else if (amountError) {
+          setError("amount", { type: "server", message: amountError });
+        } else {
           toast.error(
-            err?.message || "An error occurred while inserting voucher"
+            error?.message || "An error occurred while inserting voucher"
           );
-        })
-        .finally(() => {
-          setIsSubmitting(false);
-        });
-    }
+        }
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
-  const IconCheck = useMemo(() => {
-    if (codeUnique?.check) {
-      return <Check color="success" sx={{ cursor: "default" }} />;
-    } else {
-      return <CloseIcon color="error" sx={{ cursor: "default" }} />;
-    }
-  }, [codeUnique?.check]);
 
   const OnClose = () => {
     OnCancel?.();
   };
+
+  if (created) {
+    // The new code (server-generated or typed), ready to share.
+    return (
+      <div className="flex flex-col gap-4 w-full">
+        <Typography>Voucher created. Its code:</Typography>
+        <div className="flex flex-row items-center gap-2">
+          <Typography
+            component="span"
+            className="font-mono text-lg font-semibold"
+            data-testid="created-voucher-code"
+          >
+            {created.code}
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<ContentCopyIcon fontSize="small" />}
+            onClick={() => copyToClipboard(created.code, "Code copied")}
+          >
+            Copy
+          </Button>
+        </div>
+        <div className="flex justify-end">
+          <Button variant="contained" color="primary" onClick={OnClose}>
+            Done
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -148,30 +180,27 @@ export default function VoucherForm({ voucher = null, onSuccess, OnCancel }) {
           control={control}
           render={({ field: { onChange, value }, fieldState: { error } }) => (
             <FormInput
-              placeholder="Enter Code"
-              value={value}
-              onChange={(val) => {
-                onChange(val);
-                if (val.trim()) {
-                  debouncedCode(val);
-                }
-              }}
-              helperText={error?.message || codeUnique?.message}
-              endAdornment={
-                value && (
-                  <Tooltip title={codeUnique?.message}>
-                    {codeUnique?.loading ? (
-                      <CircularProgress
-                        size="20px"
-                        color="primary"
-                        sx={{ cursor: "default" }}
-                      />
-                    ) : (
-                      IconCheck
-                    )}
-                  </Tooltip>
-                )
+              placeholder={generate ? "Generated by the server" : "Enter Code"}
+              value={generate ? "" : value}
+              onChange={onChange}
+              disabled={generate}
+              helperText={error?.message}
+            />
+          )}
+        />
+        <Controller
+          name="generate"
+          control={control}
+          render={({ field: { onChange, value } }) => (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={!!value}
+                  onChange={(e) => onChange(e.target.checked)}
+                />
               }
+              label="Generate for me"
             />
           )}
         />
@@ -230,7 +259,7 @@ export default function VoucherForm({ voucher = null, onSuccess, OnCancel }) {
           variant="contained"
           color="primary"
           type="submit"
-          disabled={isSubmitting || !codeUnique?.check}
+          disabled={isSubmitting}
           startIcon={
             isSubmitting && <CircularProgress size={18} color="inherit" />
           }

@@ -3,28 +3,40 @@
   flex-flow: column nowrap;
 
   .react-date-range-picker {
+    width: 100%;
+
+    // same look as the MUI TextField / LookupSelect filter inputs (theme MuiInput, AsyncPaginate)
     input {
       height: 40px;
       width: 100%;
-      border-radius: 15px;
-      border: 1px solid rgba(0, 0, 0, 0.23);
-      color: black;
-      margin-left: 2px;
+      padding: 0 8px;
+      border-radius: 10px;
+      border: 1px solid var(--mui-palette-divider, rgba(0, 0, 0, 0.12));
+      background-color: var(--mui-palette-background-paper, #fff);
+      color: var(--mui-palette-text-secondary, rgba(0, 0, 0, 0.6));
+      font: inherit;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
     }
     input:hover {
       outline: none;
-      border: 1px solid var(--color-primary);
+      border-color: var(--mui-palette-primary-main, var(--color-primary));
     }
+    input:focus,
     input:focus-visible {
-      outline: var(--color-primary) auto 0.5px;
+      outline: none;
+      border-color: var(--mui-palette-primary-main, var(--color-primary));
+      box-shadow: 0 0 0 3px
+        color-mix(in srgb, var(--mui-palette-primary-main, var(--color-primary)) 10%, transparent);
     }
 
     input:disabled {
       color: rgb(149, 156, 169);
+      background-color: var(--mui-palette-background-default, #fafafa);
     }
 
     input::placeholder {
-      color: rgba(0, 0, 0, 0.23);
+      color: currentColor;
+      opacity: 0.42;
     }
   }
 

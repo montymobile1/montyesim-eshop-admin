@@ -31,3 +31,15 @@ build/
 .env.*
 coverage/*
 package-lock.json
+!coverage/lcov.info
+
+# env files (contain Supabase keys)
+.env
+.env.*
+!.env.example
+
+# Build output (vite outDir). Never commit it: an old bundle leaked a Supabase key (see docs/adminDocs/MS-5094-cleanup.md).
+/build/
+
+# Claude Code agent worktrees
+.claude/worktrees/
