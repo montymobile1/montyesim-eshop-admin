@@ -12,12 +12,11 @@ import {
   FormDropdownList,
 } from "../../Components/form-component/FormComponent";
 import LookupSelect from "../../Components/shared/lookup-select/LookupSelect";
-import { USERS_LOOKUP_MIN_SEARCH } from "../../Components/shared/lookup-select/lookupLoadOptions";
 import RowComponent from "../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../Components/shared/table-component/TableComponent";
 import TablePaginationComponent from "../../Components/shared/table-component/TablePaginationComponent";
 import { getAllAuditLogs } from "../../core/apis/auditLogAPI";
-import { getUsersLookup } from "../../core/apis/lookupsAPI";
+import { getAdminsLookup } from "../../core/apis/lookupsAPI";
 import useQueryParams from "../../core/custom-hook/useQueryParams";
 import { actorLabel, formatAuditDate } from "../../core/helpers/auditJson";
 import AuditLogDetail from "./AuditLogDetail";
@@ -242,10 +241,10 @@ const AuditLogPage = () => {
               </label>
               <LookupSelect
                 inputId="audit-admin-input"
-                fetcher={getUsersLookup}
-                minSearchLength={USERS_LOOKUP_MIN_SEARCH}
+                // admin accounts only (not every user account)
+                fetcher={getAdminsLookup}
                 value={admin}
-                placeholder={"Select Admin Email"}
+                placeholder={"Select an admin"}
                 onChange={(value) => setAdmin(value)}
               />
             </FormControl>

@@ -1,5 +1,6 @@
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box, IconButton, Menu, MenuItem, useMediaQuery } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
@@ -103,6 +104,14 @@ export default function TopNav() {
           horizontal: "right",
         }}
       >
+        <MenuItem
+          onClick={() => {
+            handleMenuClose();
+            navigate("/profile");
+          }}
+        >
+          <PersonOutlineIcon fontSize="small" sx={{ mr: 1 }} /> Profile
+        </MenuItem>
         <MenuItem onClick={handleSignOut}>
           <LogoutIcon fontSize="small" sx={{ mr: 1 }} /> Logout
         </MenuItem>

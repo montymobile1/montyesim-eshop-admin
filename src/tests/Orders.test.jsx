@@ -1,5 +1,7 @@
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import { toast } from "react-toastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AuthLayout from "../Components/layout/AuthLayout";
@@ -63,6 +65,8 @@ vi.mock("../Components/form-component/FormComponent", async () => {
   };
 });
 
+dayjs.extend(utc);
+
 const FACETS = { all: 2, success: 1, pending: 1, canceled: 0, failed: 0 };
 
 const listResponse = (rows, total = rows.length, facets = FACETS) => ({
@@ -82,6 +86,7 @@ const ORDERS = [
     bundle_name: "Europe 5GB",
     bundle_code: "EU-5GB",
     created_at: "2026-10-01T10:00:00",
+    payment_time: "2026-10-01T10:05:00",
     user: { id: "u1", email: "jane@example.com", msisdn: "+96170000000" },
   },
   {
@@ -122,6 +127,16 @@ describe("Orders Page", () => {
     expect(
       screen.getByRole("heading", { name: /Orders/i, level: 1 })
     ).toBeInTheDocument();
+  });
+
+  it("shows Created At and Payment Time in local time (API sends UTC without an offset)", async () => {
+    renderPage();
+
+    expect(await screen.findByText("jane@example.com")).toBeInTheDocument();
+    expect(screen.getByText("Payment Time")).toBeInTheDocument();
+    const local = (value) => dayjs.utc(value).local().format("DD-MM-YYYY HH:mm");
+    expect(screen.getByText(local("2026-10-01T10:00:00"))).toBeInTheDocument();
+    expect(screen.getByText(local("2026-10-01T10:05:00"))).toBeInTheDocument();
   });
 
   it("opens on All, page 1, newest first", async () => {

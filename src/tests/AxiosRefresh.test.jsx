@@ -116,6 +116,8 @@ describe("api instance: 401 handling", () => {
     expect(refreshSpy).toHaveBeenCalledTimes(1);
     expect(refreshSpy).toHaveBeenCalledWith(`${API_BASE_URL}/auth/refresh`, {
       refresh_token: "refresh-1",
+      // TEOS-256: the API checks the refresh comes from the signed-in device
+      device: expect.objectContaining({ device_key: expect.any(String) }),
     });
     expect(firstRes.data.data.url).toBe("users");
     expect(secondRes.data.data.url).toBe("orders");

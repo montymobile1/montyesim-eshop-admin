@@ -24,6 +24,14 @@ export const BAN_STATUS = {
   active: "active",
 };
 
+// account_type filter: guest = anonymous accounts of the user portal's guest checkout
+// (rows carry is_guest); registered = every other account
+export const ACCOUNT_TYPE = {
+  all: "all",
+  registered: "registered",
+  guest: "guest",
+};
+
 // GET /users?search&ban_status=all|banned|active&sort=created_at|email&dir=asc|desc&page&page_size
 // res.data.data = { data: [user rows with is_banned, banned_until], total_count,
 //                   facets: { all, banned, active } }

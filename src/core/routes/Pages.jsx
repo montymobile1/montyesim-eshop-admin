@@ -269,4 +269,24 @@ export const MenuRoutes = [
     ],
     children: [],
   },
+  // TEOS-307
+  {
+    parentName: null,
+    parentGuid: null,
+    displayOrder: 11,
+    uri: "admins",
+    permission: PERMISSIONS.SECURITY_MANAGE,
+    iconUri: "fa-user-shield",
+    recordGuid: "15",
+    position: 100,
+    group: 1,
+    menuDetail: [
+      {
+        name: "Admins",
+        description: "Admins",
+        languageCode: "en",
+      },
+    ],
+    children: [],
+  },
 ];

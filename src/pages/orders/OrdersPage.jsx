@@ -1,6 +1,5 @@
 //UTILITIES
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import CountUp from "react-countup";
 import { useSearchParams } from "react-router-dom";
@@ -38,7 +37,7 @@ import useUrlQueries, {
   useLastValidPage,
 } from "../../core/custom-hook/useUrlQueries";
 import { dateRangeError } from "../promotions/PromoAnalysis";
-import { isCalendarDay } from "../../core/helpers/apiDates";
+import { formatApiDate, isCalendarDay } from "../../core/helpers/apiDates";
 
 // TEOS-119: tabs with counts from the API `facets` (the status filter is not applied to them).
 const STATUS_TABS = [
@@ -330,6 +329,7 @@ function OrdersPage() {
     { name: "Payment Status" },
 
     { name: "Created At", sorted: "created_at" },
+    { name: "Payment Time" },
   ];
 
   const tableCellStyles = {
@@ -497,9 +497,10 @@ function OrdersPage() {
               <TagComponent value={el?.payment_status} />
             </TableCell>
             <TableCell {...tableCellStyles}>
-              {el?.created_at
-                ? dayjs(el?.created_at).format("DD-MM-YYYY HH:mm")
-                : "N/A"}
+              {formatApiDate(el?.created_at, "DD-MM-YYYY HH:mm")}
+            </TableCell>
+            <TableCell {...tableCellStyles}>
+              {formatApiDate(el?.payment_time, "DD-MM-YYYY HH:mm")}
             </TableCell>
           </RowComponent>
         ))}

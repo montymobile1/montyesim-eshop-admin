@@ -10,6 +10,12 @@ export const getUsersLookup = async (params) => {
   return await api.get(`users/lookup`, { params });
 };
 
+// Audit log "Admin" filter: admin and super_admin accounts only (same shape as the users lookup,
+// items also carry role). ?id= restores the label of an id kept in the URL, a former admin included.
+export const getAdminsLookup = async (params) => {
+  return await api.get(`audit-log/lookup`, { params });
+};
+
 export const getBundlesLookup = async (params) => {
   return await api.get(`bundles/lookup`, { params });
 };

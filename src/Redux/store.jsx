@@ -9,11 +9,33 @@ import storage from "redux-persist/lib/storage";
 import AuthSlice from "./reducers/AuthReducer";
 import ThemeReducer from "./reducers/ThemeReducer";
 import SidebarReducer from "./reducers/SidebarReducer";
-import hardSet from "redux-persist/es/stateReconciler/hardSet";
 import { thunk } from "redux-thunk";
+import { getAuthStorage } from "../core/helpers/encryptedStorage";
+
+/*
+  TEOS-256 (contract D2): the auth slice has its own persist config, written only
+  through the encrypted storage engine (AES-GCM, non-extractable key in IndexedDB).
+  The access token stays in memory: after a reload the first API call refreshes it
+  with the refresh token. No IndexedDB / WebCrypto: the slice is not persisted at all.
+*/
+export const AUTH_PERSIST_KEY = "auth";
+export const AUTH_PERSISTED_FIELDS = [
+  "refresh_token",
+  "expires_at",
+  "user_info",
+  "isAuthenticated",
+  "device_id",
+];
+
+export const authPersistConfig = {
+  key: AUTH_PERSIST_KEY,
+  version: 1,
+  storage: getAuthStorage(),
+  whitelist: AUTH_PERSISTED_FIELDS,
+};
 
 const rootReducer = combineReducers({
-  authentication: AuthSlice,
+  authentication: persistReducer(authPersistConfig, AuthSlice),
   sidebar: SidebarReducer,
   theme: ThemeReducer,
 });
@@ -25,8 +47,10 @@ const rootReducer = combineReducers({
      to the admin API shape
      ({ access_token, refresh_token, expires_at, user_info: { id, email, role, permissions }, isAuthenticated }).
      Old sessions cannot be reused, so the user signs in again.
+  2: TEOS-256: authentication left the root (plain localStorage) and is persisted
+     encrypted under its own key. The old plain copy is dropped: everyone signs in once.
 */
-const PERSIST_VERSION = 1;
+export const PERSIST_VERSION = 2;
 
 const signedOutAuthentication = {
   access_token: null,
@@ -41,15 +65,21 @@ export const persistMigrations = {
     ...state,
     authentication: { ...signedOutAuthentication },
   }),
+  2: (state) => {
+    if (!state) return state;
+    const { authentication, ...rest } = state;
+    return rest;
+  },
 };
 
-const persistConfig = {
+// autoMergeLevel1 (the default): the root only holds sidebar and theme, so a
+// hardSet would wipe the authentication slice on rehydrate.
+export const persistConfig = {
   key: "root",
   version: PERSIST_VERSION,
   migrate: createMigrate(persistMigrations, { debug: false }),
   storage,
-  stateReconciler: hardSet,
-  whitelist: ["authentication", "sidebar", "theme"],
+  whitelist: ["sidebar", "theme"],
   debug: true,
 };
 

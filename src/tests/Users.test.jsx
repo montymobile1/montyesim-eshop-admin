@@ -137,6 +137,31 @@ describe("Users Page", { timeout: 20000 }, () => {
     });
   });
 
+  it("account type filter: Guests sends account_type=guest, keeps it in the URL; guest rows show a Guest chip", async () => {
+    signInWith([PERMISSIONS.USERS_READ]);
+    const guest = { ...USERS[1], id: "g1", email: null, is_banned: false, banned_until: null, is_guest: true,
+                    guest_email: "typed@checkout.com" };
+    usersAPI.getAllUsers.mockImplementation(async (params) =>
+      listResponse(params.account_type === "guest" ? [guest] : USERS)
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByText("jane@example.com");
+    expect(lastCallParams().account_type).toBeUndefined(); // "all" is not sent
+    expect(screen.queryByText("Guest")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("combobox", { name: /Account type/i }));
+    await user.click(await screen.findByRole("option", { name: "Guests" }));
+
+    await waitFor(() => expect(lastCallParams().account_type).toBe("guest"));
+    expect(lastCallParams().page).toBe(1);
+    expect(window.location.search).toContain("accountType=guest");
+    expect(await screen.findByText("Guest")).toBeInTheDocument();
+    // a guest has no account email: the one typed at checkout is shown
+    expect(screen.getByText("typed@checkout.com")).toBeInTheDocument();
+  });
+
   it("a page past the end moves to the last valid page and replaces the URL (TEOS-286)", async () => {
     signInWith([PERMISSIONS.USERS_READ]);
     window.history.pushState({}, "", "/users?pageSize=10&page=99");
@@ -193,7 +218,7 @@ describe("Users Page", { timeout: 20000 }, () => {
     renderPage();
     await screen.findByText("jane@example.com");
 
-    await user.type(screen.getByPlaceholderText("Search By Email"), "jane");
+    await user.type(screen.getByPlaceholderText("Search by email or phone"), "jane");
     await user.click(screen.getByRole("button", { name: "Apply" }));
 
     await waitFor(() =>

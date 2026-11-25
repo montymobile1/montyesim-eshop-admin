@@ -34,6 +34,13 @@ export const PERMISSIONS = {
   USERS_BAN: "admin.users.ban",
   BUNDLES_BULK: "admin.bundles.bulk",
   REFERRALS_EXPORT: "admin.referrals.export",
+  // TEOS-307: Admins page (reset password, revoke access)
+  SECURITY_MANAGE: "admin.security.manage",
+};
+
+export const ROLE_LABELS = {
+  admin: "Admin",
+  super_admin: "Super Admin",
 };
 
 export const ADMIN_ROLES = {

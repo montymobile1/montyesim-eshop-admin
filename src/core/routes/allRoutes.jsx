@@ -25,6 +25,10 @@ import { PERMISSIONS } from "../vairables/Permissions";
 import HandleBanners from "../../pages/banners/HandleBanners";
 import BannersList from "../../pages/banners/BannersList";
 import GroupsTagReorder from "../../pages/groups/GroupsTagReorder";
+import ProfilePage from "../../pages/profile/ProfilePage";
+import AdminsPage from "../../pages/admins/AdminsPage";
+import ResetPasswordPage from "../../pages/authentication/ResetPasswordPage";
+import ResetPasswordWrapper from "./ResetPasswordWrapper";
 
 export const privateRoutes = [
   {
@@ -186,6 +190,23 @@ export const privateRoutes = [
         regex: "^/audit-log/?$",
         permission: PERMISSIONS.AUDIT_READ,
       },
+      // TEOS-307: every admin's own profile (email, role, change password)
+      {
+        path: "/profile",
+        element: <ProfilePage />,
+        key: "/profile",
+        name: "Profile",
+        regex: "^/profile/?$",
+      },
+      // TEOS-307: admin accounts, super admin only
+      {
+        path: "/admins",
+        element: <AdminsPage />,
+        key: "/admins",
+        name: "Admins",
+        regex: "^/admins/?$",
+        permission: PERMISSIONS.SECURITY_MANAGE,
+      },
 
       ...(import.meta.env.VITE_SUPPORT_PROMO == "true"
         ? [
@@ -272,6 +293,23 @@ export const privateRoutes = [
 ];
 
 export const publicRoutes = [
+  /*
+    TEOS-307: the page of the password reset email link. Reachable signed in or
+    not (RouteWrapper would send a signed-in admin away and lose the link's token).
+  */
+  {
+    path: "/reset-password",
+    element: <ResetPasswordWrapper />,
+    key: "/reset-password",
+    name: "Reset Password",
+    regex: "^/reset-password/?$",
+    children: [
+      {
+        index: true,
+        element: <ResetPasswordPage />,
+      },
+    ],
+  },
   {
     path: "/",
     element: <RouteWrapper shouldbeLoggedIn={false} />,

@@ -62,7 +62,8 @@ const fillAndSubmit = async () => {
   await user.click(screen.getByRole("button", { name: /Sign In/i }));
 };
 
-describe("SignInPage", () => {
+// typing with userEvent is slow while the full suite runs in parallel
+describe("SignInPage", { timeout: 20000 }, () => {
   beforeEach(() => {
     store.dispatch(SignOut());
     vi.clearAllMocks();
@@ -115,6 +116,8 @@ describe("SignInPage", () => {
     expect(login).toHaveBeenCalledWith({
       email: "admin@example.com",
       password: "secret-password",
+      // TEOS-256: the browser's device values
+      device: expect.objectContaining({ device_key: expect.any(String) }),
     });
     expect(await screen.findByText("Users landing")).toBeInTheDocument();
 

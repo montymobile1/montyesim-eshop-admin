@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { toast } from "react-toastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getAllAuditLogs, getAuditLogById } from "../core/apis/auditLogAPI";
-import { getUsersLookup } from "../core/apis/lookupsAPI";
+import { getAdminsLookup } from "../core/apis/lookupsAPI";
 import AuditLogPage from "../pages/audit-log/AuditLogPage";
 import { fireEvent, render, screen, waitFor, within } from "./utils/test-utils";
 
@@ -13,7 +13,7 @@ vi.mock("../core/apis/auditLogAPI", () => ({
 }));
 
 vi.mock("../core/apis/lookupsAPI", () => ({
-  getUsersLookup: vi.fn(),
+  getAdminsLookup: vi.fn(),
 }));
 
 const page = (rows, total = rows.length, byTable = {}) => ({
@@ -58,7 +58,26 @@ describe("Audit log page", () => {
     vi.clearAllMocks();
     window.history.pushState({}, "", "/audit-log");
     getAllAuditLogs.mockResolvedValue(page(ROWS, 57, { bundle: 40, "auth.users": 17 }));
-    getUsersLookup.mockResolvedValue({ data: { data: { data: [], total_count: 0 } } });
+    getAdminsLookup.mockResolvedValue({ data: { data: { data: [], total_count: 0 } } });
+  });
+
+  it("the Admin filter offers admin accounts only (audit-log lookup, not every user)", async () => {
+    getAdminsLookup.mockResolvedValue({
+      data: { data: { data: [{ id: "a1", label: "boss@example.com", email: "boss@example.com", role: "super_admin" }], total_count: 1 } },
+    });
+    const user = userEvent.setup();
+    render(<AuditLogPage />);
+    await screen.findByText("supplier issue");
+
+    expect(screen.getByText("Select an admin")).toBeInTheDocument();
+    await user.click(document.getElementById("audit-admin-input"));
+    await user.type(document.getElementById("audit-admin-input"), "b");
+
+    // one letter is enough: the admin list is short (the users lookup needed 2)
+    await waitFor(() =>
+      expect(getAdminsLookup.mock.calls.some(([params]) => params?.search === "b")).toBe(true)
+    );
+    expect(await screen.findByText("boss@example.com", { selector: "[class*='option'], div" })).toBeInTheDocument();
   });
 
   it("opens on page 1 with no filters and shows the projected rows", async () => {

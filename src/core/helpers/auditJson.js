@@ -36,9 +36,15 @@ export const conflictCode = (error) => {
   return match ? match[1] : null;
 };
 
-// "Deleted user" when the admin no longer exists.
-export const actorLabel = (changedBy) =>
-  changedBy?.email || (changedBy?.id ? changedBy.id : "Deleted user");
+/*
+  The "Changed by" email. TEOS-341: an admin without an email shows "N/A" (never the
+  id); "Deleted user" when the API has no admin for the row (older rows of a deleted
+  account). An admin no longer found gets the email saved with the row (no mark).
+*/
+export const actorLabel = (changedBy) => {
+  if (!changedBy) return "Deleted user";
+  return changedBy.email || "N/A";
+};
 
 /*
   changed_at is a UTC timestamp without zone: shown in the local time zone.

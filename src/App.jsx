@@ -6,6 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { useDispatch, useSelector } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
+import { DEVICE_KEY_STORAGE } from "./core/helpers/deviceInfo";
 import AppRouter from "./core/routes/AppRouter";
 import { fetchUserInfo } from "./Redux/reducers/AuthReducer";
 import { persistor } from "./Redux/store";
@@ -66,7 +67,11 @@ function App() {
         persistor
           .purge()
           .then(() => {
+            // TEOS-256: the device key is not a token; keeping it keeps this
+            // browser's trusted device across app versions
+            const deviceKey = localStorage.getItem(DEVICE_KEY_STORAGE);
             localStorage.clear();
+            if (deviceKey) localStorage.setItem(DEVICE_KEY_STORAGE, deviceKey);
             sessionStorage.clear();
             clearAllCaches()
               .then(() => {

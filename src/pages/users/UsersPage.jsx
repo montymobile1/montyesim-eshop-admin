@@ -7,6 +7,7 @@ import {
   Chip,
   FormControl,
   IconButton,
+  MenuItem,
   Tab,
   TableCell,
   Tabs,
@@ -28,7 +29,7 @@ import BanUser from "../../Components/page-component/users/BanUser";
 import RowComponent from "../../Components/shared/table-component/RowComponent";
 import TableComponent from "../../Components/shared/table-component/TableComponent";
 import TablePaginationComponent from "../../Components/shared/table-component/TablePaginationComponent";
-import { BAN_STATUS, getAllUsers } from "../../core/apis/usersAPI";
+import { ACCOUNT_TYPE, BAN_STATUS, getAllUsers } from "../../core/apis/usersAPI";
 import useUrlQueries, {
   useLastValidPage,
 } from "../../core/custom-hook/useUrlQueries";
@@ -42,6 +43,13 @@ const BAN_STATUS_TABS = [
   { value: BAN_STATUS.active, label: "Active" },
 ];
 
+// Account type filter: guest = anonymous guest-checkout accounts
+const ACCOUNT_TYPE_OPTIONS = [
+  { value: ACCOUNT_TYPE.all, label: "All accounts" },
+  { value: ACCOUNT_TYPE.registered, label: "Registered" },
+  { value: ACCOUNT_TYPE.guest, label: "Guests" },
+];
+
 // Only the columns the API can sort on (TEOS-111); the others are not clickable.
 const SORT_COLUMNS = ["created_at", "email"];
 const DEFAULT_SORT = { sortBy: "created_at", sortDirection: "desc" };
@@ -49,6 +57,7 @@ const DEFAULT_SORT = { sortBy: "created_at", sortDirection: "desc" };
 const DEFAULT_QUERIES = {
   search: "",
   banStatus: BAN_STATUS.all,
+  accountType: ACCOUNT_TYPE.all,
   pageSize: 10,
   page: 0,
   ...DEFAULT_SORT,
@@ -64,11 +73,15 @@ const isBanStatus = (value) =>
 
 const readQueries = (searchParams) => {
   const banStatus = searchParams.get("banStatus");
+  const accountType = searchParams.get("accountType");
   const sortBy = searchParams.get("sortBy");
   const sortDirection = searchParams.get("sortDirection");
   return {
     search: searchParams.get("search") || "",
     banStatus: isBanStatus(banStatus) ? banStatus : BAN_STATUS.all,
+    accountType: ACCOUNT_TYPE_OPTIONS.some((option) => option.value === accountType)
+      ? accountType
+      : ACCOUNT_TYPE.all,
     pageSize: toNumber(searchParams.get("pageSize"), 10) || 10,
     page: toNumber(searchParams.get("page"), 0),
     sortBy: SORT_COLUMNS.includes(sortBy) ? sortBy : DEFAULT_SORT.sortBy,
@@ -96,6 +109,11 @@ function UsersPage() {
         page: searchQueries.page + 1,
         page_size: searchQueries.pageSize,
         ban_status: searchQueries.banStatus,
+        // only sent when filtering (the API's default is "all")
+        account_type:
+          searchQueries.accountType !== ACCOUNT_TYPE.all
+            ? searchQueries.accountType
+            : undefined,
         search: searchQueries.search?.trim() || undefined,
         sort: searchQueries.sortBy,
         dir: searchQueries.sortDirection,
@@ -193,7 +211,7 @@ function UsersPage() {
                 fullWidth
                 required
                 size="small"
-                placeholder="Search By Email"
+                placeholder="Search by email or phone"
                 type="text"
                 slotProps={{
                   input: {
@@ -209,6 +227,37 @@ function UsersPage() {
                   setSearch(e.target.value);
                 }}
               />
+            </FormControl>
+          </Grid>
+          <Grid item size={{ xs: 12, sm: 3 }}>
+            <FormControl fullWidth>
+              <label className="mb-2" htmlFor="account-type-select">
+                Account type
+              </label>
+              {/* applies at once, like the ban status tabs */}
+              <TextField
+                id="account-type-select"
+                select
+                fullWidth
+                size="small"
+                value={searchQueries.accountType}
+                slotProps={{
+                  select: { SelectDisplayProps: { "aria-label": "Account type" } },
+                }}
+                onChange={(e) =>
+                  setSearchQueries({
+                    ...searchQueries,
+                    accountType: e.target.value,
+                    page: 0,
+                  })
+                }
+              >
+                {ACCOUNT_TYPE_OPTIONS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </TextField>
             </FormControl>
           </Grid>
         </Grid>
@@ -279,7 +328,27 @@ function UsersPage() {
                 ? `${el?.first_name || ""} ${el?.last_name || ""}`
                 : "N/A"}
             </TableCell>
-            <TableCell {...tableCellStyles}>{el?.email || "N/A"}</TableCell>
+            {/* not the shared truncate: a long email is cut with "…" (full text on hover)
+                while the Guest chip always stays fully visible */}
+            <TableCell sx={{ minWidth: "200px", maxWidth: "280px" }}>
+              <span className="flex items-center gap-2 min-w-0">
+                {/* a guest account has no email of its own: show the one typed at checkout */}
+                <span
+                  className="truncate min-w-0"
+                  title={el?.email || el?.guest_email || undefined}
+                >
+                  {el?.email || el?.guest_email || "N/A"}
+                </span>
+                {el?.is_guest && (
+                  <Tooltip
+                    title="Guest checkout account: the email was typed at checkout and is not verified"
+                    placement="top"
+                  >
+                    <Chip size="small" variant="outlined" label="Guest" className="shrink-0" />
+                  </Tooltip>
+                )}
+              </span>
+            </TableCell>
             <TableCell {...tableCellStyles}>{el?.msisdn || "N/A"}</TableCell>
             <TableCell>
               {el?.email_verified ? (

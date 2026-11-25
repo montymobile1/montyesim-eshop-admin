@@ -83,10 +83,11 @@ describe("sign-out reason on the sign-in page (TEOS-145)", () => {
     expect(window.location.search).toContain("reason=access_removed");
   });
 
-  it("any other refresh failure shows 'Your session has expired'", async () => {
+  // TEOS-256: a 5xx or no answer keeps the session (TrustedDevicesSignInStorage.test.jsx)
+  it("any other refusal of the refresh (401) shows 'Your session has expired'", async () => {
     renderApp();
 
-    await failRefreshWith(500);
+    await failRefreshWith(401);
 
     expect(await screen.findByTestId("sign-out-reason")).toHaveTextContent(
       "Your session has expired. Please sign in again."

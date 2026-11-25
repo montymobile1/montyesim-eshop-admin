@@ -1,6 +1,11 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { fetchUserInfoFromAPI } from "../redux-services/authServices";
 
+/*
+  TEOS-256: persisted encrypted (src/Redux/store.jsx authPersistConfig), without
+  access_token, isLoading and signOutReason: the access token lives in memory and
+  is refreshed after a reload.
+*/
 const initialState = {
   access_token: null,
   refresh_token: null,
@@ -8,7 +13,9 @@ const initialState = {
   user_info: null, // { id, email, role, permissions: [] }
   isLoading: false,
   isAuthenticated: false,
-  // TEOS-145: why the session ended ("access_removed" | "expired"), read by the
+  // TEOS-256: this browser's trusted-device row (login / verify-device / refresh)
+  device_id: null,
+  // TEOS-145: why the session ended ("access_removed" | "expired" | "device_revoked"), read by the
   // route guard so the sign-in URL carries ?reason=; null for a normal logout
   signOutReason: null,
 };
@@ -39,7 +46,7 @@ const AuthSlice = createSlice({
   name: "authentication",
   initialState,
   reducers: {
-    // payload = data of POST /auth/login
+    // payload = session of POST /auth/login or /auth/verify-device
     SignIn: (state, action) => {
       return {
         ...state,
@@ -47,6 +54,7 @@ const AuthSlice = createSlice({
         refresh_token: action?.payload?.refresh_token,
         expires_at: getExpiresAt(action?.payload?.expires_in),
         user_info: getUserInfo(action?.payload?.user),
+        device_id: action?.payload?.device_id ?? null,
         isAuthenticated: true,
         signOutReason: null,
       };
@@ -61,6 +69,7 @@ const AuthSlice = createSlice({
         user_info: action?.payload?.user
           ? getUserInfo(action?.payload?.user)
           : state.user_info,
+        device_id: action?.payload?.device_id ?? state.device_id ?? null,
       };
     },
     // payload = data of GET /auth/me
@@ -70,7 +79,7 @@ const AuthSlice = createSlice({
         user_info: getUserInfo(action?.payload),
       };
     },
-    // payload = optional reason ("access_removed" | "expired"); none for a normal logout
+    // payload = optional reason ("access_removed" | "expired" | "device_revoked"); none for a normal logout
     SignOut: (state, action) => {
       return { ...initialState, signOutReason: action?.payload || null };
     },
